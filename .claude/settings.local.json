@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof:*)",
+      "Bash(npm install:*)",
+      "Bash(killall:*)",
+      "Bash(node -c:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(git clone:*)",
+      "Read(//Users/steen/**)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(brew install:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git push:*)",
+      "Bash(git filter-branch:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(git log:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(docker logs:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node server.js:*)",
+      "Bash(docker exec:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(vercel env rm:*)",
+      "Bash(vercel env add:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(psql:*)",
+      "Bash(PORT=3002 node:*)",
+      "Bash(awk:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

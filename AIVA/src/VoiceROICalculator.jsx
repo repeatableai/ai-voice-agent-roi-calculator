@@ -1,0 +1,1198 @@
+import React, { useState } from 'react';
+import { TrendingUp, Clock, DollarSign, Zap, Brain, CheckCircle, ArrowRight, Target, Lightbulb, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { getDeliverablesForRole } from './data/roleDeliverables';
+import { getHaradaMatrixForRole } from './data/roleHaradaMatrices';
+import HaradaMatrix from './components/HaradaMatrix';
+import DeliverableModal from './components/DeliverableModal';
+
+const JOB_ROLES = [
+  'Operations Manager - Manufacturing',
+  'Sales Development Representative',
+  'Customer Success Manager',
+  'Software Engineer',
+  'Marketing Manager',
+  'HR Manager',
+  'Financial Analyst',
+  'Project Manager',
+  'Account Executive',
+  'Product Manager',
+  'Supply Chain Manager',
+  'Quality Assurance Manager',
+  'IT Support Specialist',
+  'Business Development Manager',
+  'Executive Assistant',
+  'Other'
+];
+
+const INDUSTRIES = [
+  'Manufacturing',
+  'Technology',
+  'Healthcare',
+  'Financial Services',
+  'Retail',
+  'Professional Services',
+  'Education',
+  'Logistics & Transportation',
+  'Hospitality',
+  'Other'
+];
+
+const COMPANY_SIZES = [
+  '1-10 employees',
+  '11-50 employees',
+  '51-200 employees',
+  '201-500 employees',
+  '501-1000 employees',
+  '1000+ employees'
+];
+
+export default function VoiceROICalculator() {
+  const [currentStep, setCurrentStep] = useState('input');
+  const [formData, setFormData] = useState({
+    jobTitle: '',
+    industry: '',
+    companySize: '',
+    companyName: '',
+    companyWebsite: '',
+    customRole: '',
+    customIndustry: '',
+    biggestFrustration: '',
+    salaryType: 'Annual Salary',
+    salaryAmount: ''
+  });
+  const [companyContext, setCompanyContext] = useState(null);
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    block2: false,
+    block3: false
+  });
+  const [additionalImpactAnswers, setAdditionalImpactAnswers] = useState({});
+  const [customDeliverables, setCustomDeliverables] = useState([
+    { id: 1, title: '', baselineHours: '', frequency: 'daily', occurrencesPerYear: '', oldWay: '', aiVoiceWay: '' }
+  ]);
+  const [showImplementationDetails, setShowImplementationDetails] = useState(false);
+  const [selectedDeliverable, setSelectedDeliverable] = useState(null);
+  const [selectedDeliverableIndex, setSelectedDeliverableIndex] = useState(null);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDeliverableClick = (deliverable, index) => {
+    setSelectedDeliverable(deliverable);
+    setSelectedDeliverableIndex(index);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedDeliverable(null);
+    setSelectedDeliverableIndex(null);
+  };
+
+  const handleCustomDeliverableChange = (id, field, value) => {
+    setCustomDeliverables(prev => prev.map(d =>
+      d.id === id ? { ...d, [field]: value } : d
+    ));
+  };
+
+  const addCustomDeliverable = () => {
+    if (customDeliverables.length < 5) {
+      setCustomDeliverables(prev => [...prev, {
+        id: prev.length + 1,
+        title: '',
+        baselineHours: '',
+        frequency: 'daily',
+        occurrencesPerYear: '',
+        oldWay: '',
+        aiVoiceWay: ''
+      }]);
+    }
+  };
+
+  const removeCustomDeliverable = (id) => {
+    if (customDeliverables.length > 1) {
+      setCustomDeliverables(prev => prev.filter(d => d.id !== id));
+    }
+  };
+
+  const generateCustomDeliverables = (hourlyRate) => {
+    return customDeliverables
+      .filter(d => d.title && d.baselineHours && d.occurrencesPerYear)
+      .map(d => {
+        const baselineHours = parseFloat(d.baselineHours);
+        const aiEnabledHours = baselineHours / 8; // Conservative 8x multiplier
+        const occurrences = parseInt(d.occurrencesPerYear);
+        const annualHoursFreed = (baselineHours - aiEnabledHours) * occurrences;
+
+        return {
+          id: d.id,
+          title: d.title,
+          category: 'top5',
+          baselineHours: baselineHours,
+          aiEnabledHours: aiEnabledHours,
+          frequency: d.frequency,
+          occurrencesPerYear: occurrences,
+          timeMultiplier: 8.0,
+          annualHoursFreed: annualHoursFreed,
+          payrollFreed: annualHoursFreed * hourlyRate,
+          scenario: `A typical ${d.title.toLowerCase()} situation in your role`,
+          oldWay: d.oldWay || 'Traditional manual approach requiring significant time and effort',
+          aiVoiceWay: d.aiVoiceWay || `Your AI voice partner analyzes the situation, provides instant guidance, and handles the heavy lifting while you focus on decisions. Completed in minutes instead of hours.`,
+          didYouKnow: {
+            show: false,
+            insight: ''
+          },
+          valueAddedSuggestion: {
+            hours: annualHoursFreed * 0.85,
+            activity: 'Strategic Initiative Leadership',
+            description: 'Reallocate freed time to high-impact strategic projects',
+            expectedImpact: 'Accelerates career progression and organizational impact'
+          },
+          additionalImpactQuestions: []
+        };
+      });
+  };
+
+  const calculateHourlyRate = () => {
+    const amount = parseFloat(formData.salaryAmount);
+    if (isNaN(amount)) return 75;
+    return formData.salaryType === 'Annual Salary' ? amount / 2080 : amount;
+  };
+
+  const getImplementationCost = (companySize) => {
+    const costs = {
+      '1-10 employees': 25000,
+      '11-50 employees': 40000,
+      '51-200 employees': 75000,
+      '201-500 employees': 125000,
+      '501-1000 employees': 200000,
+      '1000+ employees': 300000
+    };
+    return costs[companySize] || 75000;
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const generateDeliverables = (jobTitle, industry, hourlyRate) => {
+    // Check if user has actually filled out custom deliverable fields
+    const hasCustomDeliverables = customDeliverables.some(
+      d => d.title && d.title.trim() !== '' &&
+           d.baselineHours && d.baselineHours !== '' &&
+           d.occurrencesPerYear && d.occurrencesPerYear !== ''
+    );
+
+    // Only use custom deliverables if the user manually filled them out
+    if (formData.jobTitle === 'Other' && hasCustomDeliverables) {
+      console.log('📝 Using manually filled custom deliverables');
+      return generateCustomDeliverables(hourlyRate);
+    }
+
+    // For custom roles or predefined roles, use getDeliverablesForRole
+    // which has a proper fallback for unmapped roles
+    console.log(`📚 Using getDeliverablesForRole for: "${jobTitle}"`);
+    return getDeliverablesForRole(jobTitle, hourlyRate);
+  };
+
+  const generateValueAddedSuggestions = (jobTitle, totalHours) => {
+    if (jobTitle === 'Operations Manager - Manufacturing') {
+      return [
+        {
+          activity: 'Strategic Process Improvement Leadership',
+          hours: Math.round(totalHours * 0.3),
+          description: 'Lead comprehensive lean initiatives and constraint elimination projects',
+          expectedImpact: '$100K-$300K in annual cost reductions, positions you as strategic leader'
+        },
+        {
+          activity: 'Team Capability Development & AI Enablement',
+          hours: Math.round(totalHours * 0.25),
+          description: 'Train team on AI workflows, creating 3-5x productivity multiplication',
+          expectedImpact: 'Team becomes top-performing, reduces your firefighting by 60%'
+        },
+        {
+          activity: 'Cross-Functional Collaboration',
+          hours: Math.round(totalHours * 0.20),
+          description: 'Build relationships to eliminate organizational bottlenecks',
+          expectedImpact: 'Accelerates company-wide decisions 30-40%'
+        },
+        {
+          activity: 'Innovation & Technology Pilots',
+          hours: Math.round(totalHours * 0.15),
+          description: 'Test emerging technologies for competitive advantage',
+          expectedImpact: 'Builds reputation as forward-thinking leader'
+        },
+        {
+          activity: 'Long-term Strategic Planning',
+          hours: Math.round(totalHours * 0.10),
+          description: 'Develop 3-5 year capacity plans and risk mitigation',
+          expectedImpact: 'Shifts operations from reactive to proactive'
+        }
+      ];
+    }
+
+    return [
+      {
+        activity: 'Strategic Initiative Leadership',
+        hours: Math.round(totalHours * 0.4),
+        description: 'Lead high-impact projects with measurable business value',
+        expectedImpact: 'Accelerates career progression'
+      },
+      {
+        activity: 'Skill Development & Team Enablement',
+        hours: Math.round(totalHours * 0.3),
+        description: 'Develop capabilities and train others',
+        expectedImpact: 'Builds high-performing teams'
+      },
+      {
+        activity: 'Innovation & Process Improvement',
+        hours: Math.round(totalHours * 0.3),
+        description: 'Drive continuous improvement',
+        expectedImpact: 'Creates competitive advantage'
+      }
+    ];
+  };
+
+  const fetchCompanyContext = async (websiteURL) => {
+    if (!websiteURL) return null;
+
+    try {
+      // Use Jina Reader API to fetch website content (free, no API key needed)
+      const jinaURL = `https://r.jina.ai/${websiteURL}`;
+      const response = await fetch(jinaURL);
+      const markdown = await response.text();
+
+      // Extract key information from the markdown content
+      const context = {
+        rawContent: markdown.substring(0, 3000), // First 3000 chars
+        companySize: extractCompanySize(markdown),
+        products: extractProducts(markdown),
+        industry: extractIndustryDetails(markdown),
+        recentNews: extractRecentNews(markdown)
+      };
+
+      return context;
+    } catch (error) {
+      console.error('Failed to fetch company context:', error);
+      return null;
+    }
+  };
+
+  const extractCompanySize = (content) => {
+    const sizePatterns = /(\d+[\+]?\s*employees?|\d+[\+]?\s*team members?|\d+[\+]?\s*people)/gi;
+    const matches = content.match(sizePatterns);
+    return matches ? matches[0] : null;
+  };
+
+  const extractProducts = (content) => {
+    // Look for product/service mentions in first 2000 chars
+    const productSection = content.substring(0, 2000);
+    return productSection.match(/(?:products?|services?|solutions?)[\s\S]{0,200}/gi)?.[0] || null;
+  };
+
+  const extractIndustryDetails = (content) => {
+    return content.substring(0, 500); // First 500 chars usually contain industry context
+  };
+
+  const extractRecentNews = (content) => {
+    const newsPatterns = /(news|announcement|press release|recently|launched|acquired)[\s\S]{0,150}/gi;
+    const matches = content.match(newsPatterns);
+    return matches ? matches.slice(0, 2).join(' ') : null;
+  };
+
+  const generateAIContent = async (jobTitle, industry, companyName, companyContext, deliverables) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+
+      // Log request data for debugging
+      console.log('🚀 API Request:', {
+        jobTitle,
+        industry,
+        companyName,
+        deliverableCount: deliverables.length,
+        apiUrl: `${apiUrl}/api/aiva/generate-deliverable-content`
+      });
+
+      const response = await fetch(`${apiUrl}/api/aiva/generate-deliverable-content`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobTitle,
+          industry,
+          companyName,
+          companyContext,
+          deliverables: deliverables.map(d => ({
+            id: d.id,
+            title: d.title,
+            scenario: d.scenario,
+            oldWay: d.oldWay,
+            aiVoiceWay: d.aiVoiceWay,
+            baselineHours: d.baselineHours,
+            aiEnabledHours: d.aiEnabledHours,
+            frequency: d.frequency,
+            occurrencesPerYear: d.occurrencesPerYear,
+            timeMultiplier: d.timeMultiplier,
+            annualHoursFreed: d.annualHoursFreed,
+            payrollFreed: d.payrollFreed
+          }))
+        })
+      });
+
+      // Check if response is successful
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        alert(`API Error: ${errorData.error || 'Unknown error'}\n\nPlease check the console for details.`);
+        return [];
+      }
+
+      const data = await response.json();
+      console.log('✅ API Success:', {
+        receivedDeliverables: data.deliverables?.length || 0
+      });
+      return data.deliverables || [];
+    } catch (error) {
+      console.error('❌ Failed to generate AI content:', error);
+      alert(`Network Error: ${error.message}\n\nPlease check your backend server is running on port 3002.`);
+      return [];
+    }
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+
+    // Validation: Check required fields
+    const jobTitle = formData.jobTitle === 'Other' ? formData.customRole : formData.jobTitle;
+    const industry = formData.industry === 'Other' ? formData.customIndustry : formData.industry;
+
+    if (!jobTitle || jobTitle.trim() === '') {
+      alert('Please select or enter a job title');
+      setIsAnalyzing(false);
+      return;
+    }
+
+    if (!industry || industry.trim() === '') {
+      alert('Please select or enter an industry');
+      setIsAnalyzing(false);
+      return;
+    }
+
+    if (!formData.companyName || formData.companyName.trim() === '') {
+      alert('Please enter a company name');
+      setIsAnalyzing(false);
+      return;
+    }
+
+    if (!formData.salaryAmount || parseFloat(formData.salaryAmount) <= 0) {
+      alert('Please enter a valid salary amount');
+      setIsAnalyzing(false);
+      return;
+    }
+
+    console.log('📋 Starting Analysis:', {
+      jobTitle,
+      industry,
+      companyName: formData.companyName
+    });
+
+    // Step 1: Fetch company context if website URL provided
+    let context = null;
+    if (formData.companyWebsite) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Show "Researching company"
+      context = await fetchCompanyContext(formData.companyWebsite);
+      setCompanyContext(context);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const hourlyRate = calculateHourlyRate();
+    let deliverables = generateDeliverables(jobTitle, industry, hourlyRate, context);
+
+    console.log('📊 Generated Deliverables:', {
+      count: deliverables.length,
+      titles: deliverables.map(d => d.title)
+    });
+
+    // Step 2: Generate AI content for all deliverables
+    const generatedContent = await generateAIContent(
+      jobTitle,
+      industry,
+      formData.companyName,
+      context,
+      deliverables
+    );
+
+    // Step 3: Merge generated content with deliverables
+    if (generatedContent && generatedContent.length > 0) {
+      deliverables = deliverables.map((d, index) => {
+        const generated = generatedContent.find(g => g.id === d.id) || generatedContent[index];
+        return {
+          ...d,
+          keyActivities: generated?.keyActivities || d.keyActivities,
+          successMetrics: generated?.successMetrics || d.successMetrics,
+          dependencies: generated?.dependencies || d.dependencies,
+          productivityImpact: generated?.productivityImpact || d.productivityImpact,
+          emotionalImpact: generated?.emotionalImpact || d.emotionalImpact,
+          businessROI: generated?.businessROI || d.businessROI,
+          additionalRippleEffects: generated?.additionalRippleEffects || d.additionalRippleEffects,
+          compoundingEffect: generated?.compoundingEffect || d.compoundingEffect,
+          // Voice Agent Implementation Guide fields
+          voiceAgentOverview: generated?.voiceAgentOverview || '',
+          voiceAgentPersonality: generated?.voiceAgentPersonality || '',
+          voiceAgentKnowledgeBase: generated?.voiceAgentKnowledgeBase || '',
+          voiceAgentSystemPrompt: generated?.voiceAgentSystemPrompt || '',
+          voiceAgentSampleConversations: generated?.voiceAgentSampleConversations || '',
+          voiceAgentTrainingData: generated?.voiceAgentTrainingData || '',
+          voiceAgentIntegrationGuide: generated?.voiceAgentIntegrationGuide || ''
+        };
+      });
+    }
+
+    // Step 4: Build dynamic Harada Matrix from AI-generated deliverables
+    const haradaMatrix = {
+      deliverables: deliverables.map(d => ({
+        name: d.title,
+        keyActivities: d.keyActivities || ['Core responsibilities', 'Stakeholder management', 'Performance optimization'],
+        successMetrics: d.successMetrics || ['Output quality', 'Efficiency metrics', 'Stakeholder satisfaction'],
+        dependencies: d.dependencies || ['Team collaboration', 'System access', 'Resource allocation']
+      }))
+    };
+
+    const totalAnnualHoursFreed = deliverables.reduce((sum, d) => sum + d.annualHoursFreed, 0);
+    const totalPayrollFreed = totalAnnualHoursFreed * hourlyRate;
+    const implementationCost = getImplementationCost(formData.companySize);
+    // ROI calculation WITHOUT implementation cost - show as value return percentage
+    // ROI represents the value return: payroll freed as % of salary invested
+    const annualSalary = formData.salaryType === 'Annual Salary' ? parseFloat(formData.salaryAmount) : parseFloat(formData.salaryAmount) * 2080;
+    const roi = Math.round((totalPayrollFreed / annualSalary) * 100);
+    const paybackMonths = Math.round((implementationCost / totalPayrollFreed) * 12);
+    const avgMultiplier = (deliverables.reduce((sum, d) => sum + d.timeMultiplier, 0) / deliverables.length).toFixed(1);
+    // Annual Value Created = Direct payroll freed + 2x conservative downstream multiplier
+    const annualValueCreated = totalPayrollFreed * 3;
+
+    setAnalysisResults({
+      jobTitle,
+      industry: formData.industry,
+      companySize: formData.companySize,
+      companyName: formData.companyName,
+      companyWebsite: formData.companyWebsite,
+      companyContext: context,
+      haradaMatrix: haradaMatrix,
+      hourlyRate: hourlyRate.toFixed(2),
+      metrics: {
+        productivityMultiplier: avgMultiplier,
+        annualTimeSavings: Math.round(totalAnnualHoursFreed),
+        totalPayrollFreed: totalPayrollFreed,
+        annualValueCreated: annualValueCreated,
+        implementationCost: implementationCost,
+        roi: roi,
+        paybackMonths: paybackMonths
+      },
+      deliverables: deliverables,
+      valueAddedSuggestions: generateValueAddedSuggestions(jobTitle, totalAnnualHoursFreed)
+    });
+
+    setIsAnalyzing(false);
+    setCurrentStep('results');
+  };
+
+  const handleAdditionalImpactAnswer = (deliverableId, questionId, answer) => {
+    setAdditionalImpactAnswers(prev => ({
+      ...prev,
+      [deliverableId]: {
+        ...prev[deliverableId],
+        [questionId]: answer
+      }
+    }));
+  };
+
+  const generateAdditionalImpactNarrative = (deliverable, answers) => {
+    if (!answers || Object.keys(answers).length === 0) return null;
+
+    const impacts = Object.values(answers);
+    const highImpacts = impacts.filter(a => a.impact === 'high');
+    const mediumImpacts = impacts.filter(a => a.impact === 'medium');
+
+    if (highImpacts.length === 0 && mediumImpacts.length === 0) {
+      return {
+        level: 'low',
+        narrative: `Your ${deliverable.title.toLowerCase()} delivered the ${formatCurrency(deliverable.payrollFreed)} direct payroll freed value.`
+      };
+    }
+
+    let narrative = `**Downstream Impact Beyond ${formatCurrency(deliverable.payrollFreed)} Direct Value:**\n\n`;
+    let estimatedValue = { low: 0, high: 0 };
+
+    highImpacts.forEach(impact => {
+      if (impact.value === 'prevented_downtime') {
+        narrative += `**Downtime Prevention:** By addressing this proactively, you kept production running. Unplanned downtime costs $10K-$50K per hour. Preventing even one 4-6 hour event represents $40K-$300K in preserved production value.\n\n`;
+        estimatedValue.low += 40000;
+        estimatedValue.high += 300000;
+      }
+      if (impact.value === 'prevented_revenue_loss' || impact.value === 'saved_account') {
+        narrative += `**Revenue Protection:** Fast resolution prevented customer churn or revenue loss. Enterprise customer churn typically costs $50K-$500K in lifetime value.\n\n`;
+        estimatedValue.low += 50000;
+        estimatedValue.high += 500000;
+      }
+      if (impact.value === 'prevented_overruns' || impact.value === 'better_roi') {
+        narrative += `**Cost Avoidance:** Proactive management prevented budget overruns or optimized spend. Typical impact: $25K-$150K in avoided costs annually.\n\n`;
+        estimatedValue.low += 25000;
+        estimatedValue.high += 150000;
+      }
+      if (impact.value === 'higher_connect' || impact.value === 'faster_fills') {
+        narrative += `**Accelerated Outcomes:** Faster execution led to more wins, faster closes, or quicker placements. Revenue acceleration worth $30K-$200K annually.\n\n`;
+        estimatedValue.low += 30000;
+        estimatedValue.high += 200000;
+      }
+      if (impact.value === 'prevented_exec_escalation') {
+        narrative += `**Executive Protection:** Preventing executive-level escalations protects leadership time and company reputation. Each prevented escalation saves $10K-$50K in emergency discounts, credits, and executive time.\n\n`;
+        estimatedValue.low += 10000;
+        estimatedValue.high += 50000;
+      }
+      if (impact.value === 'became_standard') {
+        narrative += `**Organizational Multiplier:** Your process became the new standard, multiplying impact across your entire team. Team-wide adoption creates 5-10x value multiplication.\n\n`;
+        estimatedValue.low += 50000;
+        estimatedValue.high += 250000;
+      }
+      if (impact.value === 'prevented_lawsuit') {
+        narrative += `**Legal Risk Mitigation:** Fast, proper response prevented potential lawsuit and legal exposure. Employment lawsuits cost $125K-$500K in legal fees and settlements.\n\n`;
+        estimatedValue.low += 125000;
+        estimatedValue.high += 500000;
+      }
+      if (impact.value === 'prevented_waste') {
+        narrative += `**Budget Protection:** Catching underperforming campaigns early prevented wasted marketing spend. Typical waste from unoptimized campaigns: $10K-$50K monthly.\n\n`;
+        estimatedValue.low += 40000;
+        estimatedValue.high += 200000;
+      }
+      if (impact.value === 'prevented_delay' || impact.value === 'unblocked_team') {
+        narrative += `**Project Velocity:** Preventing delays or unblocking teams preserves project value and accelerates time-to-market. Each week of delay typically costs $25K-$75K in lost opportunity.\n\n`;
+        estimatedValue.low += 25000;
+        estimatedValue.high += 75000;
+      }
+      if (impact.value === 'won_deal' || impact.value === 'advanced_deal') {
+        narrative += `**Revenue Impact:** Winning or advancing deals faster directly drives revenue. Enterprise deals won through better positioning represent $100K-$500K in closed revenue.\n\n`;
+        estimatedValue.low += 100000;
+        estimatedValue.high += 500000;
+      }
+    });
+
+    if (mediumImpacts.length > 0 && highImpacts.length === 0) {
+      narrative += `**Incremental Improvements:** Multiple smaller improvements that compound over time.\n\n`;
+      estimatedValue.low = 15000;
+      estimatedValue.high = 75000;
+    }
+
+    if (estimatedValue.low > 0) {
+      narrative += `\n**Conservative downstream value estimate: ${formatCurrency(estimatedValue.low)} - ${formatCurrency(estimatedValue.high)} annually**`;
+    } else {
+      narrative += `\n**Estimated downstream value: $50K-$200K annually**`;
+    }
+
+    return {
+      level: highImpacts.length > 0 ? 'high' : 'medium',
+      narrative,
+      estimatedLow: estimatedValue.low || 50000,
+      estimatedHigh: estimatedValue.high || 200000
+    };
+  };
+
+  const DeliverableCard = ({ deliverable, index }) => {
+    const [showAdditionalImpact, setShowAdditionalImpact] = useState(false);
+    const answers = additionalImpactAnswers[deliverable.id] || {};
+    const additionalImpact = generateAdditionalImpactNarrative(deliverable, answers);
+
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <div className="flex items-start mb-4">
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-bold mr-4 flex-shrink-0 text-lg">
+            {index + 1}
+          </span>
+          <h3 className="text-2xl font-bold text-gray-900">{deliverable.title}</h3>
+        </div>
+
+        <div className="pl-14 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-purple-600 mb-2">THE SITUATION:</p>
+            <p className="text-gray-700">{deliverable.scenario}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-gray-600 mb-2">THE OLD WAY:</p>
+            <p className="text-gray-600">{deliverable.oldWay}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-blue-600 mb-2">THE AI VOICE WAY:</p>
+            <p className="text-gray-700">{deliverable.aiVoiceWay}</p>
+          </div>
+
+          <div className="bg-green-50 rounded-lg p-4">
+            <p className="text-sm font-bold text-green-900 mb-2">THE IMMEDIATE WIN:</p>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-green-700 font-semibold">Time Freed:</p>
+                <p className="text-green-900 font-bold">{(deliverable.baselineHours - deliverable.aiEnabledHours).toFixed(2)}h per {deliverable.frequency}</p>
+              </div>
+              <div>
+                <p className="text-green-700 font-semibold">Payroll Freed:</p>
+                <p className="text-green-900 font-bold">{formatCurrency(deliverable.payrollFreed)}/yr</p>
+              </div>
+              <div>
+                <p className="text-green-700 font-semibold">Multiplier:</p>
+                <p className="text-green-900 font-bold">{deliverable.timeMultiplier}x faster</p>
+              </div>
+            </div>
+          </div>
+
+          {deliverable.didYouKnow?.show && (
+            <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+              <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
+                <Lightbulb className="w-4 h-4 mr-2" />
+                DID YOU KNOW?
+              </p>
+              <p className="text-sm text-blue-800">{deliverable.didYouKnow.insight}</p>
+            </div>
+          )}
+
+          {deliverable.additionalImpactQuestions?.length > 0 && (
+            <div className="border-t pt-4">
+              <button
+                onClick={() => setShowAdditionalImpact(!showAdditionalImpact)}
+                className="w-full flex items-center justify-between text-purple-600 font-semibold hover:text-purple-700 mb-3"
+              >
+                <span className="flex items-center">
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Calculate Additional Downstream Impact
+                </span>
+                {showAdditionalImpact ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </button>
+
+              {showAdditionalImpact && (
+                <div className="space-y-4 bg-purple-50 rounded-lg p-4">
+                  {deliverable.additionalImpactQuestions.map((question) => (
+                    <div key={question.id}>
+                      <p className="font-semibold text-gray-800 mb-2 text-sm">{question.question}</p>
+                      <div className="space-y-2">
+                        {question.options.map((option) => (
+                          <label
+                            key={option.value}
+                            className={`flex items-start p-3 rounded-lg cursor-pointer ${
+                              answers[question.id]?.value === option.value
+                                ? 'bg-purple-200 border-2 border-purple-500'
+                                : 'bg-white border-2 border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`${deliverable.id}-${question.id}`}
+                              checked={answers[question.id]?.value === option.value}
+                              onChange={() => handleAdditionalImpactAnswer(deliverable.id, question.id, option)}
+                              className="mt-1 mr-3"
+                            />
+                            <span className="text-sm text-gray-700">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {additionalImpact && (
+                    <div className={`mt-4 p-4 rounded-lg ${
+                      additionalImpact.level === 'high' ? 'bg-green-100 border-l-4 border-green-500' : 'bg-gray-100'
+                    }`}>
+                      <p className="text-sm text-gray-800 whitespace-pre-line">{additionalImpact.narrative}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {deliverable.valueAddedSuggestion && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+              <p className="text-sm font-bold text-gray-900 mb-2 flex items-center">
+                <Target className="w-4 h-4 mr-2 text-purple-600" />
+                REALLOCATE {deliverable.valueAddedSuggestion.hours} HOURS TO:
+              </p>
+              <p className="text-sm font-semibold text-purple-900 mb-2">{deliverable.valueAddedSuggestion.activity}</p>
+              <p className="text-sm text-gray-700 mb-2">{deliverable.valueAddedSuggestion.description}</p>
+              <p className="text-sm font-semibold text-green-700">🚀 {deliverable.valueAddedSuggestion.expectedImpact}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (isAnalyzing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-2xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {formData.companyWebsite ? `Analyzing ${formData.companyName}...` : 'Analyzing Your Role...'}
+          </h2>
+          <div className="space-y-3 text-gray-600">
+            {formData.companyWebsite && (
+              <p className="flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                Researching {formData.companyWebsite}
+              </p>
+            )}
+            {formData.companyWebsite && (
+              <p className="flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+                Understanding your business model
+              </p>
+            )}
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Identifying cognitive load patterns
+            </p>
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Mapping voice intervention points
+            </p>
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Calculating productivity multipliers
+            </p>
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Generating personalized analysis for {formData.companyName}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStep === 'results' && analysisResults) {
+    const top5 = analysisResults.deliverables.filter(d => d.category === 'top5');
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Your AI Voice Impact Report</h1>
+            <p className="text-xl text-gray-600">{analysisResults.jobTitle} • {analysisResults.industry} • ${analysisResults.hourlyRate}/hr</p>
+          </div>
+
+          {analysisResults.companyContext && (
+            <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6 mb-8 max-w-4xl mx-auto">
+              <h3 className="font-bold text-gray-900 mb-3 flex items-center">
+                <Brain className="w-5 h-5 mr-2 text-blue-600" />
+                Analysis Personalized for {analysisResults.companyName}
+              </h3>
+              <div className="text-sm text-gray-700 space-y-1">
+                {analysisResults.companyContext.companySize && (
+                  <p><strong>Team Size:</strong> ~{analysisResults.companyContext.companySize}</p>
+                )}
+                {analysisResults.companyContext.products && (
+                  <p><strong>Focus:</strong> {analysisResults.companyContext.products.substring(0, 150)}...</p>
+                )}
+                <p className="text-xs text-gray-500 mt-2">
+                  This analysis incorporates insights from your website to make scenarios more realistic and contextually relevant to {analysisResults.companyName}.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <HaradaMatrix
+            haradaData={analysisResults.haradaMatrix}
+            companyName={analysisResults.companyName}
+            jobTitle={analysisResults.jobTitle}
+            deliverables={top5}
+            onDeliverableClick={handleDeliverableClick}
+          />
+
+          <DeliverableModal
+            deliverable={selectedDeliverable}
+            index={selectedDeliverableIndex}
+            isOpen={selectedDeliverable !== null}
+            onClose={handleCloseModal}
+            formatCurrency={formatCurrency}
+            additionalImpactAnswers={additionalImpactAnswers}
+            handleAdditionalImpactAnswer={handleAdditionalImpactAnswer}
+            generateAdditionalImpactNarrative={generateAdditionalImpactNarrative}
+            companyName={analysisResults.companyName}
+            jobTitle={analysisResults.jobTitle}
+            industry={analysisResults.industry}
+          />
+
+          <div className="grid md:grid-cols-4 gap-6 mb-12">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.productivityMultiplier}x</span>
+              </div>
+              <p className="text-blue-100 text-sm">Productivity Multiplier</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <Clock className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.annualTimeSavings}</span>
+              </div>
+              <p className="text-purple-100 text-sm">Hours Freed Annually</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="w-8 h-8" />
+                <span className="text-2xl font-bold">{formatCurrency(analysisResults.metrics.totalPayrollFreed)}</span>
+              </div>
+              <p className="text-green-100 text-sm">Payroll Freed to Reallocate</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <Zap className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.roi}%</span>
+              </div>
+              <p className="text-orange-100 text-sm">Value Return Rate</p>
+              <p className="text-orange-200 text-xs mt-1">Payroll freed vs salary</p>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-8">
+            <div className="text-center mb-8">
+              <Target className="w-12 h-12 text-purple-600 mx-auto mb-3" />
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Your Freed Time Portfolio</h2>
+              <p className="text-xl text-gray-700 mb-4">{analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0)} hours freed annually</p>
+
+              <div className="grid grid-cols-3 gap-4 mt-6 max-w-3xl mx-auto">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-2xl font-bold text-blue-600">{Math.round(analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0) / 40)}</div>
+                  <div className="text-sm text-gray-600">Full Work Weeks</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0) * analysisResults.hourlyRate)}</div>
+                  <div className="text-sm text-gray-600">Value to Reallocate</div>
+                </div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-2xl font-bold text-purple-600">{Math.round((analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0) / 2080) * 100)}%</div>
+                  <div className="text-sm text-gray-600">of Your Year Freed</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">💡 The Real Value: What You Can Do With This Time</h3>
+              <p className="text-gray-700 mb-4">
+                Instead of spending {analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0)} hours/year on repetitive tasks,
+                you can reallocate this time to high-impact activities that accelerate your career and drive organizational results:
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              {analysisResults.valueAddedSuggestions.map((suggestion, index) => (
+                <div key={index} className="bg-white rounded-xl p-6 border-l-4 border-purple-500">
+                  <div className="flex justify-between mb-3">
+                    <h3 className="text-xl font-bold text-gray-900">{index + 1}. {suggestion.activity}</h3>
+                    <span className="text-lg font-bold text-purple-600">{suggestion.hours}h/year</span>
+                  </div>
+                  <p className="text-gray-700 mb-3">{suggestion.description}</p>
+                  <div className="bg-green-50 rounded-lg p-3 mb-3">
+                    <p className="text-sm font-semibold text-green-800">🚀 {suggestion.expectedImpact}</p>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span>That's ~{Math.round(suggestion.hours / 52)} hours per week you can spend on this</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">🎯 Bottom Line</h3>
+              <p className="text-gray-800">
+                By freeing {analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0)} hours annually from repetitive work,
+                you shift from being <strong>tactically busy</strong> to being <strong>strategically impactful</strong>.
+                This is how top performers in your role operate—they don't work harder, they work on higher-leverage activities.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <button
+              onClick={() => setShowImplementationDetails(!showImplementationDetails)}
+              className="w-full flex items-center justify-between text-gray-900 hover:text-blue-600 transition-colors"
+            >
+              <div className="flex items-center">
+                <DollarSign className="w-6 h-6 mr-3 text-blue-600" />
+                <span className="text-xl font-bold">Implementation & Payback Analysis</span>
+              </div>
+              {showImplementationDetails ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+            </button>
+
+            {showImplementationDetails && (
+              <div className="mt-6 space-y-6">
+                <p className="text-gray-600">
+                  Here's the business case for implementing AI voice partners, including investment requirements and payback timeline.
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">Implementation Investment</p>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(analysisResults.metrics.implementationCost)}</p>
+                    <p className="text-xs text-gray-500 mt-1">One-time setup & training</p>
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">Payback Period</p>
+                    <p className="text-2xl font-bold text-blue-600">{analysisResults.metrics.paybackMonths} months</p>
+                    <p className="text-xs text-gray-500 mt-1">Time to break even</p>
+                  </div>
+
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">First Year ROI</p>
+                    <p className="text-2xl font-bold text-green-600">{analysisResults.metrics.roi}%</p>
+                    <p className="text-xs text-gray-500 mt-1">Return on investment</p>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+                  <h3 className="font-bold text-gray-900 mb-3">3-Year Value Projection</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-700">Year 1 Value Created:</span>
+                      <span className="font-bold text-gray-900">{formatCurrency(analysisResults.metrics.annualValueCreated)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-700">Year 1 Investment:</span>
+                      <span className="font-bold text-red-600">-{formatCurrency(analysisResults.metrics.implementationCost)}</span>
+                    </div>
+                    <div className="border-t border-gray-300 pt-2 flex justify-between">
+                      <span className="text-gray-900 font-semibold">Year 1 Net Value:</span>
+                      <span className="font-bold text-green-600">{formatCurrency(analysisResults.metrics.annualValueCreated - analysisResults.metrics.implementationCost)}</span>
+                    </div>
+                    <div className="mt-4 flex justify-between">
+                      <span className="text-gray-700">3-Year Total Value:</span>
+                      <span className="font-bold text-purple-600">{formatCurrency((analysisResults.metrics.annualValueCreated * 3) - analysisResults.metrics.implementationCost)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  <p className="mb-2"><strong>What's included in implementation:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>AI voice platform setup and integration</li>
+                    <li>Custom voice partner development for your role</li>
+                    <li>Team training and onboarding</li>
+                    <li>Knowledge base integration with your systems</li>
+                    <li>6 months of optimization and support</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Build Your AI Voice Partners?</h2>
+            <p className="text-xl text-gray-600 mb-8">You've seen the {formatCurrency(analysisResults.metrics.totalPayrollFreed)} opportunity</p>
+
+            <button
+              onClick={() => {
+                setCurrentStep('input');
+                setAnalysisResults(null);
+                setAdditionalImpactAnswers({});
+                setShowImplementationDetails(false);
+                setCustomDeliverables([
+                  { id: 1, title: '', baselineHours: '', frequency: 'daily', occurrencesPerYear: '', oldWay: '', aiVoiceWay: '' }
+                ]);
+                setFormData({
+                  jobTitle: '',
+                  industry: '',
+                  companySize: '',
+                  companyName: '',
+                  companyWebsite: '',
+                  customRole: '',
+                  customIndustry: '',
+                  biggestFrustration: '',
+                  salaryType: 'Annual Salary',
+                  salaryAmount: ''
+                });
+                setCompanyContext(null);
+              }}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-8 rounded-lg hover:from-blue-700 hover:to-purple-700"
+            >
+              Analyze Another Role
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-block p-3 bg-blue-100 rounded-full mb-4">
+            <Zap className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">AI Voice Partner Impact Calculator</h1>
+          <p className="text-xl text-gray-600">Discover how AI voice partners dramatically increase productivity—guaranteed</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Your Job Title</label>
+            <select
+              value={formData.jobTitle}
+              onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select your role...</option>
+              {JOB_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
+            </select>
+          </div>
+
+          {formData.jobTitle === 'Other' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Specify your role</label>
+              <input
+                type="text"
+                value={formData.customRole}
+                onChange={(e) => handleInputChange('customRole', e.target.value)}
+                placeholder="e.g., Data Analyst, Operations Coordinator..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Industry</label>
+            <select
+              value={formData.industry}
+              onChange={(e) => handleInputChange('industry', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select industry...</option>
+              {INDUSTRIES.map(industry => <option key={industry} value={industry}>{industry}</option>)}
+            </select>
+          </div>
+
+          {formData.industry === 'Other' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Specify your industry</label>
+              <input
+                type="text"
+                value={formData.customIndustry}
+                onChange={(e) => handleInputChange('customIndustry', e.target.value)}
+                placeholder="e.g., Real Estate, Construction, Agriculture..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Company Name</label>
+            <input
+              type="text"
+              value={formData.companyName}
+              onChange={(e) => handleInputChange('companyName', e.target.value)}
+              placeholder="e.g., Acme Manufacturing"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Company Website (Optional but recommended for personalized analysis)</label>
+            <input
+              type="url"
+              value={formData.companyWebsite}
+              onChange={(e) => handleInputChange('companyWebsite', e.target.value)}
+              placeholder="https://www.yourcompany.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">We'll research your company to personalize the analysis. Your data is not stored.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Company Size</label>
+            <select
+              value={formData.companySize}
+              onChange={(e) => handleInputChange('companySize', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select size...</option>
+              {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+              <select
+                value={formData.salaryType}
+                onChange={(e) => handleInputChange('salaryType', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Annual Salary">Annual Salary</option>
+                <option value="Hourly Rate">Hourly Rate</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {formData.salaryType === 'Annual Salary' ? 'Annual Salary' : 'Hourly Rate'}
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500">$</span>
+                <input
+                  type="number"
+                  value={formData.salaryAmount}
+                  onChange={(e) => handleInputChange('salaryAmount', e.target.value)}
+                  placeholder={formData.salaryType === 'Annual Salary' ? '85000' : '45'}
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Biggest daily frustration? (Optional)</label>
+            <textarea
+              value={formData.biggestFrustration}
+              onChange={(e) => handleInputChange('biggestFrustration', e.target.value)}
+              placeholder="e.g., Searching for information across systems..."
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <button
+            onClick={handleAnalyze}
+            disabled={!formData.jobTitle || !formData.industry || !formData.companySize || !formData.companyName || !formData.salaryAmount}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            <span>Calculate My AI Voice Impact</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="mt-8 bg-blue-50 rounded-xl p-6">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Brain className="w-5 h-5 mr-2 text-blue-600" />
+            Why AI Voice? Why Now?
+          </h3>
+          <p className="text-gray-700 text-sm">
+            AI voice agents have sub-200ms response time, understand emotional nuance, handle interruptions naturally, and reason in real-time. Unlike text-based AI, voice works while you're moving and thinking—cognitive augmentation without disruption.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

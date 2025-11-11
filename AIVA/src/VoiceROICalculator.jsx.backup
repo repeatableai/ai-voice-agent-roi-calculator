@@ -1,0 +1,777 @@
+import React, { useState } from 'react';
+import { TrendingUp, Clock, DollarSign, Zap, Brain, CheckCircle, ArrowRight, Target, Lightbulb, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { getDeliverablesForRole } from './data/roleDeliverables';
+
+const JOB_ROLES = [
+  'Operations Manager - Manufacturing',
+  'Sales Development Representative',
+  'Customer Success Manager',
+  'Software Engineer',
+  'Marketing Manager',
+  'HR Manager',
+  'Financial Analyst',
+  'Project Manager',
+  'Account Executive',
+  'Product Manager',
+  'Supply Chain Manager',
+  'Quality Assurance Manager',
+  'IT Support Specialist',
+  'Business Development Manager',
+  'Executive Assistant',
+  'Other'
+];
+
+const INDUSTRIES = [
+  'Manufacturing',
+  'Technology',
+  'Healthcare',
+  'Financial Services',
+  'Retail',
+  'Professional Services',
+  'Education',
+  'Logistics & Transportation',
+  'Hospitality',
+  'Other'
+];
+
+const COMPANY_SIZES = [
+  '1-10 employees',
+  '11-50 employees',
+  '51-200 employees',
+  '201-500 employees',
+  '501-1000 employees',
+  '1000+ employees'
+];
+
+export default function VoiceROICalculator() {
+  const [currentStep, setCurrentStep] = useState('input');
+  const [formData, setFormData] = useState({
+    jobTitle: '',
+    industry: '',
+    companySize: '',
+    customRole: '',
+    biggestFrustration: '',
+    salaryType: 'Annual Salary',
+    salaryAmount: ''
+  });
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    block2: false,
+    block3: false
+  });
+  const [additionalImpactAnswers, setAdditionalImpactAnswers] = useState({});
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const calculateHourlyRate = () => {
+    const amount = parseFloat(formData.salaryAmount);
+    if (isNaN(amount)) return 75;
+    return formData.salaryType === 'Annual Salary' ? amount / 2080 : amount;
+  };
+
+  const getImplementationCost = (companySize) => {
+    const costs = {
+      '1-10 employees': 25000,
+      '11-50 employees': 40000,
+      '51-200 employees': 75000,
+      '201-500 employees': 125000,
+      '501-1000 employees': 200000,
+      '1000+ employees': 300000
+    };
+    return costs[companySize] || 75000;
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const generateDeliverables = (jobTitle, industry, hourlyRate) => {
+    if (jobTitle === 'Operations Manager - Manufacturing') {
+      return [
+        {
+          id: 1,
+          title: 'Production Planning & Schedule Optimization',
+          category: 'top5',
+          baselineHours: 2.5,
+          aiEnabledHours: 0.25,
+          frequency: 'daily',
+          occurrencesPerYear: 250,
+          timeMultiplier: 10.0,
+          annualHoursFreed: 562.5,
+          payrollFreed: 562.5 * hourlyRate,
+          scenario: 'You\'re reviewing tomorrow\'s production schedule when a rush order comes in',
+          oldWay: 'You\'d spend 2-3 hours manually adjusting the schedule, checking capacity constraints across multiple systems, coordinating with procurement on material availability, and updating the team',
+          aiVoiceWay: 'You describe the rush order to your AI voice partner while walking the floor. Within 30 seconds, it analyzes capacity constraints, material availability, and labor resources, then suggests three optimal scheduling scenarios with trade-off analysis',
+          didYouKnow: {
+            show: true,
+            insight: 'By completing schedule adjustments in minutes instead of hours, you unblock your entire production team\'s morning work. Three departments and 45+ workers get clear direction 2 hours earlier each day'
+          },
+          valueAddedSuggestion: {
+            hours: 2.25,
+            activity: 'Strategic Capacity Planning',
+            description: 'Use freed time to analyze 3-6 month capacity trends and develop scenario plans',
+            expectedImpact: 'Prevents 2-3 crisis situations per quarter worth $50K-$150K each'
+          },
+          additionalImpactQuestions: [
+            {
+              id: 'q1',
+              question: 'Did this faster scheduling prevent any downstream issues?',
+              options: [
+                { value: 'prevented_downtime', label: 'Prevented line downtime or delays', impact: 'high' },
+                { value: 'avoided_overtime', label: 'Avoided unnecessary overtime costs', impact: 'medium' },
+                { value: 'improved_delivery', label: 'Improved on-time delivery performance', impact: 'medium' },
+                { value: 'none', label: 'No specific prevention this time', impact: 'none' }
+              ]
+            }
+          ]
+        },
+        {
+          id: 2,
+          title: 'Quality Investigation & Root Cause Analysis',
+          category: 'top5',
+          baselineHours: 3.0,
+          aiEnabledHours: 0.33,
+          frequency: 'per incident',
+          occurrencesPerYear: 120,
+          timeMultiplier: 9.0,
+          annualHoursFreed: 320,
+          payrollFreed: 320 * hourlyRate,
+          scenario: 'A quality defect is discovered on the production line',
+          oldWay: 'You\'d spend 3-4 hours pulling historical data, consulting quality engineers, analyzing similar past issues, and documenting findings',
+          aiVoiceWay: 'You verbally describe the defect while standing at the line. Your AI voice partner asks clarifying questions, searches 10,000+ past defect records, and suggests probable root causes with immediate containment actions',
+          didYouKnow: {
+            show: true,
+            insight: 'Quality investigations completed in 20 minutes vs 3 hours means containment happens before defective product progresses. This prevents $15K-$75K in scrap and rework per major incident'
+          },
+          valueAddedSuggestion: {
+            hours: 2.67,
+            activity: 'Predictive Quality Analytics',
+            description: 'Analyze quality trend data and implement early warning systems',
+            expectedImpact: 'Reduces defect rates 15-25% over 12 months'
+          },
+          additionalImpactQuestions: []
+        },
+        {
+          id: 3,
+          title: 'Supplier Coordination & Issue Resolution',
+          category: 'top5',
+          baselineHours: 1.5,
+          aiEnabledHours: 0.25,
+          frequency: 'daily',
+          occurrencesPerYear: 250,
+          timeMultiplier: 6.0,
+          annualHoursFreed: 312.5,
+          payrollFreed: 312.5 * hourlyRate,
+          scenario: 'A critical supplier reports a delivery delay',
+          oldWay: 'Research contract terms, check alternatives, calculate impact, prepare for negotiation, then document everything',
+          aiVoiceWay: 'Your AI voice partner instantly provides contract leverage, alternative suppliers with lead times, and production impact analysis. During calls, it suggests follow-ups and auto-documents',
+          didYouKnow: { show: false, insight: '' },
+          valueAddedSuggestion: {
+            hours: 1.25,
+            activity: 'Strategic Supplier Development',
+            description: 'Proactive supplier relationship management and multi-sourcing strategy',
+            expectedImpact: 'Reduces supply disruptions 40-60%, improves supplier performance'
+          },
+          additionalImpactQuestions: []
+        },
+        {
+          id: 4,
+          title: 'Team Coaching & Performance Management',
+          category: 'top5',
+          baselineHours: 2.0,
+          aiEnabledHours: 0.33,
+          frequency: 'per week',
+          occurrencesPerYear: 50,
+          timeMultiplier: 6.0,
+          annualHoursFreed: 83.5,
+          payrollFreed: 83.5 * hourlyRate,
+          scenario: 'Difficult performance conversation with a direct report',
+          oldWay: 'Spend 2 hours preparing, reviewing docs, and worrying about the conversation',
+          aiVoiceWay: 'AI voice partner suggests coaching approaches, helps anticipate reactions, recommends specific language, and provides confidence',
+          didYouKnow: {
+            show: true,
+            insight: 'Managers with AI coaching prep have 3x more effective conversations, addressing issues weeks earlier and accelerating team performance'
+          },
+          valueAddedSuggestion: {
+            hours: 1.67,
+            activity: 'Proactive Team Development',
+            description: 'Structured skill development and succession planning',
+            expectedImpact: 'Team productivity +15-25%, turnover -30-40%'
+          },
+          additionalImpactQuestions: []
+        },
+        {
+          id: 5,
+          title: 'Equipment Maintenance Coordination',
+          category: 'top5',
+          baselineHours: 1.5,
+          aiEnabledHours: 0.25,
+          frequency: 'per week',
+          occurrencesPerYear: 50,
+          timeMultiplier: 6.0,
+          annualHoursFreed: 62.5,
+          payrollFreed: 62.5 * hourlyRate,
+          scenario: 'Equipment metrics show degrading performance',
+          oldWay: 'Review maintenance history, consult technicians, check parts availability',
+          aiVoiceWay: 'AI proactively alerts you, predicts failure timeline, recommends action timing with cost trade-offs',
+          didYouKnow: {
+            show: true,
+            insight: 'Predictive maintenance reduces unplanned downtime 40-60%. Every prevented downtime hour saves $10K-$50K in lost production'
+          },
+          valueAddedSuggestion: {
+            hours: 1.25,
+            activity: 'Strategic Asset Management',
+            description: 'Equipment performance analysis and maintenance optimization',
+            expectedImpact: 'Improves OEE by 5-10 points, reduces emergency maintenance 50-70%'
+          },
+          additionalImpactQuestions: []
+        }
+      ];
+    }
+
+    // Default deliverables for other roles
+    return [
+      {
+        id: 1,
+        title: 'Primary Role Deliverable',
+        category: 'top5',
+        baselineHours: 3.0,
+        aiEnabledHours: 0.4,
+        frequency: 'daily',
+        occurrencesPerYear: 200,
+        timeMultiplier: 7.5,
+        annualHoursFreed: 520,
+        payrollFreed: 520 * hourlyRate,
+        scenario: 'Key deliverable situation in your role',
+        oldWay: 'Traditional approach requiring significant manual effort',
+        aiVoiceWay: 'AI voice partner provides instant expert guidance while you focus on decisions',
+        didYouKnow: {
+          show: true,
+          insight: 'This type of deliverable typically creates downstream value that multiplies your direct time savings by 3-5x'
+        },
+        valueAddedSuggestion: {
+          hours: 2.6,
+          activity: 'Strategic Initiative Leadership',
+          description: 'High-impact projects aligned with organizational goals',
+          expectedImpact: 'Accelerates career progression and organizational impact'
+        },
+        additionalImpactQuestions: []
+      }
+    ];
+  };
+
+  const generateValueAddedSuggestions = (jobTitle, totalHours) => {
+    if (jobTitle === 'Operations Manager - Manufacturing') {
+      return [
+        {
+          activity: 'Strategic Process Improvement Leadership',
+          hours: Math.round(totalHours * 0.3),
+          description: 'Lead comprehensive lean initiatives and constraint elimination projects',
+          expectedImpact: '$100K-$300K in annual cost reductions, positions you as strategic leader'
+        },
+        {
+          activity: 'Team Capability Development & AI Enablement',
+          hours: Math.round(totalHours * 0.25),
+          description: 'Train team on AI workflows, creating 3-5x productivity multiplication',
+          expectedImpact: 'Team becomes top-performing, reduces your firefighting by 60%'
+        },
+        {
+          activity: 'Cross-Functional Collaboration',
+          hours: Math.round(totalHours * 0.20),
+          description: 'Build relationships to eliminate organizational bottlenecks',
+          expectedImpact: 'Accelerates company-wide decisions 30-40%'
+        },
+        {
+          activity: 'Innovation & Technology Pilots',
+          hours: Math.round(totalHours * 0.15),
+          description: 'Test emerging technologies for competitive advantage',
+          expectedImpact: 'Builds reputation as forward-thinking leader'
+        },
+        {
+          activity: 'Long-term Strategic Planning',
+          hours: Math.round(totalHours * 0.10),
+          description: 'Develop 3-5 year capacity plans and risk mitigation',
+          expectedImpact: 'Shifts operations from reactive to proactive'
+        }
+      ];
+    }
+
+    return [
+      {
+        activity: 'Strategic Initiative Leadership',
+        hours: Math.round(totalHours * 0.4),
+        description: 'Lead high-impact projects with measurable business value',
+        expectedImpact: 'Accelerates career progression'
+      },
+      {
+        activity: 'Skill Development & Team Enablement',
+        hours: Math.round(totalHours * 0.3),
+        description: 'Develop capabilities and train others',
+        expectedImpact: 'Builds high-performing teams'
+      },
+      {
+        activity: 'Innovation & Process Improvement',
+        hours: Math.round(totalHours * 0.3),
+        description: 'Drive continuous improvement',
+        expectedImpact: 'Creates competitive advantage'
+      }
+    ];
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    const jobTitle = formData.jobTitle === 'Other' ? formData.customRole : formData.jobTitle;
+    const hourlyRate = calculateHourlyRate();
+    const deliverables = generateDeliverables(jobTitle, formData.industry, hourlyRate);
+
+    const totalAnnualHoursFreed = deliverables.reduce((sum, d) => sum + d.annualHoursFreed, 0);
+    const totalPayrollFreed = totalAnnualHoursFreed * hourlyRate;
+    const implementationCost = getImplementationCost(formData.companySize);
+    const roi = ((totalPayrollFreed - implementationCost) / implementationCost * 100).toFixed(0);
+    const avgMultiplier = (deliverables.reduce((sum, d) => sum + d.timeMultiplier, 0) / deliverables.length).toFixed(1);
+
+    setAnalysisResults({
+      jobTitle,
+      industry: formData.industry,
+      companySize: formData.companySize,
+      hourlyRate: hourlyRate.toFixed(2),
+      metrics: {
+        productivityMultiplier: avgMultiplier,
+        annualTimeSavings: Math.round(totalAnnualHoursFreed),
+        totalPayrollFreed: totalPayrollFreed,
+        implementationCost: implementationCost,
+        roi: roi
+      },
+      deliverables: deliverables,
+      valueAddedSuggestions: generateValueAddedSuggestions(jobTitle, totalAnnualHoursFreed)
+    });
+
+    setIsAnalyzing(false);
+    setCurrentStep('results');
+  };
+
+  const handleAdditionalImpactAnswer = (deliverableId, questionId, answer) => {
+    setAdditionalImpactAnswers(prev => ({
+      ...prev,
+      [deliverableId]: {
+        ...prev[deliverableId],
+        [questionId]: answer
+      }
+    }));
+  };
+
+  const generateAdditionalImpactNarrative = (deliverable, answers) => {
+    if (!answers || Object.keys(answers).length === 0) return null;
+
+    const impacts = Object.values(answers);
+    const highImpacts = impacts.filter(a => a.impact === 'high');
+
+    if (highImpacts.length === 0) {
+      return {
+        level: 'low',
+        narrative: `Your ${deliverable.title.toLowerCase()} delivered the ${formatCurrency(deliverable.payrollFreed)} direct payroll freed value.`
+      };
+    }
+
+    let narrative = `**Additional Impact Beyond ${formatCurrency(deliverable.payrollFreed)}:**\n\n`;
+
+    highImpacts.forEach(impact => {
+      if (impact.value === 'prevented_downtime') {
+        narrative += `**Downtime Prevention:** By addressing this proactively, you kept production running. Unplanned downtime likely costs $10K-$50K per hour. Preventing even a 4-6 hour event represents $40K-$300K in preserved production value.\n\n`;
+      }
+    });
+
+    narrative += `**Conservative additional impact estimate: $100K-$400K annually**`;
+
+    return { level: 'high', narrative };
+  };
+
+  const DeliverableCard = ({ deliverable, index }) => {
+    const [showAdditionalImpact, setShowAdditionalImpact] = useState(false);
+    const answers = additionalImpactAnswers[deliverable.id] || {};
+    const additionalImpact = generateAdditionalImpactNarrative(deliverable, answers);
+
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <div className="flex items-start mb-4">
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-bold mr-4 flex-shrink-0 text-lg">
+            {index + 1}
+          </span>
+          <h3 className="text-2xl font-bold text-gray-900">{deliverable.title}</h3>
+        </div>
+
+        <div className="pl-14 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-purple-600 mb-2">THE SITUATION:</p>
+            <p className="text-gray-700">{deliverable.scenario}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-gray-600 mb-2">THE OLD WAY:</p>
+            <p className="text-gray-600">{deliverable.oldWay}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-blue-600 mb-2">THE AI VOICE WAY:</p>
+            <p className="text-gray-700">{deliverable.aiVoiceWay}</p>
+          </div>
+
+          <div className="bg-green-50 rounded-lg p-4">
+            <p className="text-sm font-bold text-green-900 mb-2">THE IMMEDIATE WIN:</p>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-green-700 font-semibold">Time Freed:</p>
+                <p className="text-green-900 font-bold">{(deliverable.baselineHours - deliverable.aiEnabledHours).toFixed(2)}h per {deliverable.frequency}</p>
+              </div>
+              <div>
+                <p className="text-green-700 font-semibold">Payroll Freed:</p>
+                <p className="text-green-900 font-bold">{formatCurrency(deliverable.payrollFreed)}/yr</p>
+              </div>
+              <div>
+                <p className="text-green-700 font-semibold">Multiplier:</p>
+                <p className="text-green-900 font-bold">{deliverable.timeMultiplier}x faster</p>
+              </div>
+            </div>
+          </div>
+
+          {deliverable.didYouKnow?.show && (
+            <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+              <p className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
+                <Lightbulb className="w-4 h-4 mr-2" />
+                DID YOU KNOW?
+              </p>
+              <p className="text-sm text-blue-800">{deliverable.didYouKnow.insight}</p>
+            </div>
+          )}
+
+          {deliverable.additionalImpactQuestions?.length > 0 && (
+            <div className="border-t pt-4">
+              <button
+                onClick={() => setShowAdditionalImpact(!showAdditionalImpact)}
+                className="w-full flex items-center justify-between text-purple-600 font-semibold hover:text-purple-700 mb-3"
+              >
+                <span className="flex items-center">
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Calculate Additional Downstream Impact
+                </span>
+                {showAdditionalImpact ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </button>
+
+              {showAdditionalImpact && (
+                <div className="space-y-4 bg-purple-50 rounded-lg p-4">
+                  {deliverable.additionalImpactQuestions.map((question) => (
+                    <div key={question.id}>
+                      <p className="font-semibold text-gray-800 mb-2 text-sm">{question.question}</p>
+                      <div className="space-y-2">
+                        {question.options.map((option) => (
+                          <label
+                            key={option.value}
+                            className={`flex items-start p-3 rounded-lg cursor-pointer ${
+                              answers[question.id]?.value === option.value
+                                ? 'bg-purple-200 border-2 border-purple-500'
+                                : 'bg-white border-2 border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name={`${deliverable.id}-${question.id}`}
+                              checked={answers[question.id]?.value === option.value}
+                              onChange={() => handleAdditionalImpactAnswer(deliverable.id, question.id, option)}
+                              className="mt-1 mr-3"
+                            />
+                            <span className="text-sm text-gray-700">{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {additionalImpact && (
+                    <div className={`mt-4 p-4 rounded-lg ${
+                      additionalImpact.level === 'high' ? 'bg-green-100 border-l-4 border-green-500' : 'bg-gray-100'
+                    }`}>
+                      <p className="text-sm text-gray-800 whitespace-pre-line">{additionalImpact.narrative}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {deliverable.valueAddedSuggestion && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+              <p className="text-sm font-bold text-gray-900 mb-2 flex items-center">
+                <Target className="w-4 h-4 mr-2 text-purple-600" />
+                REALLOCATE {deliverable.valueAddedSuggestion.hours} HOURS TO:
+              </p>
+              <p className="text-sm font-semibold text-purple-900 mb-2">{deliverable.valueAddedSuggestion.activity}</p>
+              <p className="text-sm text-gray-700 mb-2">{deliverable.valueAddedSuggestion.description}</p>
+              <p className="text-sm font-semibold text-green-700">🚀 {deliverable.valueAddedSuggestion.expectedImpact}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (isAnalyzing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-2xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Analyzing Your Role...</h2>
+          <div className="space-y-3 text-gray-600">
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Identifying cognitive load patterns
+            </p>
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Mapping voice intervention points
+            </p>
+            <p className="flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 mr-2 text-green-500" />
+              Calculating productivity multipliers
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStep === 'results' && analysisResults) {
+    const top5 = analysisResults.deliverables.filter(d => d.category === 'top5');
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Your AI Voice Impact Report</h1>
+            <p className="text-xl text-gray-600">{analysisResults.jobTitle} • {analysisResults.industry} • ${analysisResults.hourlyRate}/hr</p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6 mb-12">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.productivityMultiplier}x</span>
+              </div>
+              <p className="text-blue-100 text-sm">Productivity Multiplier</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <Clock className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.annualTimeSavings}</span>
+              </div>
+              <p className="text-purple-100 text-sm">Hours Freed Annually</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="w-8 h-8" />
+                <span className="text-2xl font-bold">{formatCurrency(analysisResults.metrics.totalPayrollFreed)}</span>
+              </div>
+              <p className="text-green-100 text-sm">Payroll Freed to Reallocate</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+              <div className="flex items-center justify-between mb-2">
+                <Zap className="w-8 h-8" />
+                <span className="text-3xl font-bold">{analysisResults.metrics.roi}%</span>
+              </div>
+              <p className="text-orange-100 text-sm">First Year ROI</p>
+            </div>
+          </div>
+
+          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Top 5 High-Impact Deliverables</h2>
+
+          {top5.map((deliverable, index) => (
+            <DeliverableCard key={deliverable.id} deliverable={deliverable} index={index} />
+          ))}
+
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-8">
+            <div className="text-center mb-6">
+              <Target className="w-12 h-12 text-purple-600 mx-auto mb-3" />
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Your Freed Time Portfolio</h2>
+              <p className="text-xl text-gray-700">{analysisResults.valueAddedSuggestions.reduce((sum, s) => sum + s.hours, 0)} hours freed annually</p>
+            </div>
+
+            <div className="space-y-6">
+              {analysisResults.valueAddedSuggestions.map((suggestion, index) => (
+                <div key={index} className="bg-white rounded-xl p-6">
+                  <div className="flex justify-between mb-3">
+                    <h3 className="text-xl font-bold text-gray-900">{index + 1}. {suggestion.activity}</h3>
+                    <span className="text-lg font-bold text-purple-600">{suggestion.hours}h</span>
+                  </div>
+                  <p className="text-gray-700 mb-3">{suggestion.description}</p>
+                  <div className="bg-green-50 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-green-800">🚀 {suggestion.expectedImpact}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Build Your AI Voice Partners?</h2>
+            <p className="text-xl text-gray-600 mb-8">You've seen the {formatCurrency(analysisResults.metrics.totalPayrollFreed)} opportunity</p>
+
+            <button
+              onClick={() => {
+                setCurrentStep('input');
+                setAnalysisResults(null);
+                setAdditionalImpactAnswers({});
+                setFormData({
+                  jobTitle: '',
+                  industry: '',
+                  companySize: '',
+                  customRole: '',
+                  biggestFrustration: '',
+                  salaryType: 'Annual Salary',
+                  salaryAmount: ''
+                });
+              }}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-8 rounded-lg hover:from-blue-700 hover:to-purple-700"
+            >
+              Analyze Another Role
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-block p-3 bg-blue-100 rounded-full mb-4">
+            <Zap className="w-8 h-8 text-blue-600" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">AI Voice Partner Impact Calculator</h1>
+          <p className="text-xl text-gray-600">Discover how AI voice partners dramatically increase productivity—guaranteed</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Your Job Title</label>
+            <select
+              value={formData.jobTitle}
+              onChange={(e) => handleInputChange('jobTitle', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select your role...</option>
+              {JOB_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
+            </select>
+          </div>
+
+          {formData.jobTitle === 'Other' && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Specify your role</label>
+              <input
+                type="text"
+                value={formData.customRole}
+                onChange={(e) => handleInputChange('customRole', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Industry</label>
+            <select
+              value={formData.industry}
+              onChange={(e) => handleInputChange('industry', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select industry...</option>
+              {INDUSTRIES.map(industry => <option key={industry} value={industry}>{industry}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Company Size</label>
+            <select
+              value={formData.companySize}
+              onChange={(e) => handleInputChange('companySize', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select size...</option>
+              {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+              <select
+                value={formData.salaryType}
+                onChange={(e) => handleInputChange('salaryType', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Annual Salary">Annual Salary</option>
+                <option value="Hourly Rate">Hourly Rate</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {formData.salaryType === 'Annual Salary' ? 'Annual Salary' : 'Hourly Rate'}
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-gray-500">$</span>
+                <input
+                  type="number"
+                  value={formData.salaryAmount}
+                  onChange={(e) => handleInputChange('salaryAmount', e.target.value)}
+                  placeholder={formData.salaryType === 'Annual Salary' ? '85000' : '45'}
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Biggest daily frustration? (Optional)</label>
+            <textarea
+              value={formData.biggestFrustration}
+              onChange={(e) => handleInputChange('biggestFrustration', e.target.value)}
+              placeholder="e.g., Searching for information across systems..."
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <button
+            onClick={handleAnalyze}
+            disabled={!formData.jobTitle || !formData.industry || !formData.companySize || !formData.salaryAmount}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            <span>Calculate My AI Voice Impact</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="mt-8 bg-blue-50 rounded-xl p-6">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Brain className="w-5 h-5 mr-2 text-blue-600" />
+            Why AI Voice? Why Now?
+          </h3>
+          <p className="text-gray-700 text-sm">
+            AI voice agents have sub-200ms response time, understand emotional nuance, handle interruptions naturally, and reason in real-time. Unlike text-based AI, voice works while you're moving and thinking—cognitive augmentation without disruption.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

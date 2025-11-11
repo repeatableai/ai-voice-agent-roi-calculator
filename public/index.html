@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Agent Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="login-page">
+        <div class="login-container">
+            <div class="login-brand">
+                <div class="brand-logo">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="60" height="60" rx="16" fill="url(#gradient1)"/>
+                        <path d="M30 15L45 25V35L30 45L15 35V25L30 15Z" fill="white" opacity="0.9"/>
+                        <circle cx="30" cy="30" r="8" fill="url(#gradient1)"/>
+                        <defs>
+                            <linearGradient id="gradient1" x1="0" y1="0" x2="60" y2="60">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h1>AI Voice Agent</h1>
+                <p>Enterprise Voice Intelligence Platform</p>
+            </div>
+
+            <!-- Login Card -->
+            <div class="login-card" id="login-card">
+                <h2>Welcome Back</h2>
+                <p class="login-subtitle">Sign in to access your dashboard</p>
+
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" placeholder="you@company.com" required autocomplete="email">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+
+                    <div id="login-error" class="error-message"></div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <span>Sign In</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4 10H16M16 10L12 6M16 10L12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="login-links">
+                    <a href="#" onclick="showForgotPassword(event)" class="auth-link">Forgot Password?</a>
+                    <span class="link-divider">•</span>
+                    <a href="#" onclick="showRegister(event)" class="auth-link">Create Account</a>
+                </div>
+
+                <div class="login-hint">
+                    <p>Test Account: <code>admin@example.com</code> / <code>Admin123!</code></p>
+                </div>
+            </div>
+
+            <!-- Register Card -->
+            <div class="login-card" id="register-card" style="display: none;">
+                <h2>Create Account</h2>
+                <p class="login-subtitle">Join our AI voice platform today</p>
+
+                <form id="register-form">
+                    <div class="input-group">
+                        <label for="register-email">Email Address</label>
+                        <input type="email" id="register-email" placeholder="you@company.com" required autocomplete="email">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="register-confirm">Confirm Password</label>
+                        <input type="password" id="register-confirm" placeholder="Re-enter password" required minlength="8" autocomplete="new-password">
+                    </div>
+
+                    <div id="register-error" class="error-message"></div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <span>Create Account</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="login-links">
+                    <a href="#" onclick="showLogin(event)" class="auth-link">Already have an account? Sign in</a>
+                </div>
+            </div>
+
+            <!-- Forgot Password Card -->
+            <div class="login-card" id="forgot-card" style="display: none;">
+                <h2>Reset Password</h2>
+                <p class="login-subtitle">Enter your email to receive reset instructions</p>
+
+                <form id="forgot-form">
+                    <div class="input-group">
+                        <label for="forgot-email">Email Address</label>
+                        <input type="email" id="forgot-email" placeholder="you@company.com" required autocomplete="email">
+                    </div>
+
+                    <div id="forgot-error" class="error-message"></div>
+                    <div id="forgot-success" class="success-message" style="display: none;"></div>
+
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <span>Send Reset Link</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M3 8L10 13L17 8M3 8L10 3L17 8M3 8V16L10 21L17 16V8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="login-links">
+                    <a href="#" onclick="showLogin(event)" class="auth-link">Back to Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-page" class="dashboard-page" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg width="36" height="36" viewBox="0 0 60 60" fill="none">
+                        <rect width="60" height="60" rx="12" fill="url(#gradient2)"/>
+                        <path d="M30 15L45 25V35L30 45L15 35V25L30 15Z" fill="white" opacity="0.95"/>
+                        <circle cx="30" cy="30" r="8" fill="url(#gradient2)"/>
+                        <defs>
+                            <linearGradient id="gradient2" x1="0" y1="0" x2="60" y2="60">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>Voice AI</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="overview">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 4H17M3 10H17M3 16H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>Overview</span>
+                </a>
+                <a href="#" class="nav-item" data-page="agents">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="3" y="3" width="14" height="14" rx="7" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="10" cy="8" r="2" fill="currentColor"/>
+                        <path d="M6 15C6 13 8 12 10 12C12 12 14 13 14 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>Agents</span>
+                </a>
+                <a href="#" class="nav-item" data-page="knowledge">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M4 4H12L16 8V16H4V4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M12 4V8H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Knowledge</span>
+                </a>
+                <a href="#" class="nav-item" data-page="analytics">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 14L8 9L12 13L17 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13 6H17V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-item" data-page="settings">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                        <path d="M10 1V4M10 16V19M19 10H16M4 10H1M16.364 16.364L14.243 14.243M5.757 5.757L3.636 3.636M16.364 3.636L14.243 5.757M5.757 14.243L3.636 16.364" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="16" fill="#e0e7ff"/>
+                            <circle cx="16" cy="12" r="5" fill="#6366f1"/>
+                            <path d="M6 28C6 22 10 20 16 20C22 20 26 22 26 28" fill="#6366f1"/>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-email"></div>
+                        <button id="logout-btn" class="logout-link">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview -->
+            <div id="overview-page" class="content-section">
+                <header class="page-header">
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p class="page-subtitle">Monitor your AI voice agents and performance</p>
+                    </div>
+                </header>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">Total Agents</span>
+                            <div class="metric-icon blue">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <rect x="4" y="4" width="16" height="16" rx="8" stroke="currentColor" stroke-width="2"/>
+                                    <circle cx="12" cy="10" r="3" fill="currentColor"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="stat-total-agents">0</div>
+                        <div class="metric-change positive">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 12V4M8 4L4 8M8 4L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Active</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">Conversations</span>
+                            <div class="metric-icon purple">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 6H20M4 12H20M4 18H12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="stat-total-conversations">0</div>
+                        <div class="metric-change positive">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 12V4M8 4L4 8M8 4L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>Total</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">Interactions</span>
+                            <div class="metric-icon green">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="stat-total-interactions">0</div>
+                        <div class="metric-change positive">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 12V4M8 4L4 8M8 4L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <span>All time</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-label">Avg Response</span>
+                            <div class="metric-icon orange">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="metric-value" id="stat-avg-response-time">0ms</div>
+                        <div class="metric-change neutral">
+                            <span>Response time</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-cards">
+                    <div class="action-card" onclick="showPage('agents')">
+                        <div class="action-icon gradient-blue">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M16 8V24M8 16H24" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3>Create New Agent</h3>
+                        <p>Deploy an AI voice agent with custom personality and knowledge</p>
+                    </div>
+
+                    <div class="action-card" onclick="showPage('knowledge')">
+                        <div class="action-icon gradient-purple">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <path d="M8 8H20L24 12V24H8V8Z" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+                                <path d="M20 8V12H24" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <h3>Add Knowledge Base</h3>
+                        <p>Upload documents to train your agents with custom knowledge</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agents -->
+            <div id="agents-page" class="content-section" style="display: none;">
+                <header class="page-header">
+                    <div>
+                        <h1>AI Agents</h1>
+                        <p class="page-subtitle">Manage your voice AI agents</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showCreateAgentModal()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Create Agent
+                    </button>
+                </header>
+
+                <div id="agents-list" class="cards-grid"></div>
+            </div>
+
+            <!-- Knowledge -->
+            <div id="knowledge-page" class="content-section" style="display: none;">
+                <header class="page-header">
+                    <div>
+                        <h1>Knowledge Bases</h1>
+                        <p class="page-subtitle">Manage training data for your agents</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showUploadModal()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M10 14V6M10 6L6 10M10 6L14 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M4 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Upload Files
+                    </button>
+                </header>
+
+                <div id="knowledge-list" class="cards-grid"></div>
+            </div>
+
+            <!-- Analytics -->
+            <div id="analytics-page" class="content-section" style="display: none;">
+                <header class="page-header">
+                    <div>
+                        <h1>Analytics</h1>
+                        <p class="page-subtitle">Performance insights and metrics</p>
+                    </div>
+                </header>
+                <div class="empty-state">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                        <path d="M20 80L40 60L60 70L100 30" stroke="#e5e7eb" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="40" cy="60" r="6" fill="#6366f1"/>
+                        <circle cx="60" cy="70" r="6" fill="#8b5cf6"/>
+                        <circle cx="100" cy="30" r="6" fill="#a855f7"/>
+                    </svg>
+                    <h3>Advanced Analytics Coming Soon</h3>
+                    <p>Track conversation patterns, user satisfaction, and AI performance</p>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div id="settings-page" class="content-section" style="display: none;">
+                <header class="page-header">
+                    <div>
+                        <h1>Settings</h1>
+                        <p class="page-subtitle">Manage your account and preferences</p>
+                    </div>
+                </header>
+
+                <div class="settings-card">
+                    <h3>Security</h3>
+                    <form id="change-password-form">
+                        <div class="input-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" required minlength="8">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Password</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Agent Modal -->
+    <div id="agent-modal" class="modal">
+        <div class="modal-overlay" onclick="closeAgentModal()"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Create AI Agent</h2>
+                <button class="modal-close" onclick="closeAgentModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="agent-form">
+                <div class="modal-body">
+                    <div class="form-section">
+                        <h4>Basic Information</h4>
+                        <div class="input-group">
+                            <label for="agent-name">Agent Name *</label>
+                            <input type="text" id="agent-name" placeholder="Customer Support Agent" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="agent-description">Description</label>
+                            <textarea id="agent-description" rows="3" placeholder="Helps customers with product inquiries and support"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Voice Configuration</h4>
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="voice-id">Voice</label>
+                                <select id="voice-id">
+                                    <option value="EXAVITQu4vr4xnSDxMaL">Rachel - Professional Female</option>
+                                    <option value="21m00Tcm4TlvDq8ikWAM">Drew - Friendly Male</option>
+                                    <option value="AZnzlk1XvdvUeBnXmlld">Domi - Warm Female</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="stability">Stability: <span id="stability-value">0.5</span></label>
+                                <input type="range" id="stability" min="0" max="1" step="0.1" value="0.5" oninput="updateStability(this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Personality</h4>
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="personality">Type</label>
+                                <select id="personality">
+                                    <option value="professional">Professional</option>
+                                    <option value="friendly">Friendly</option>
+                                    <option value="casual">Casual</option>
+                                    <option value="educational">Educational</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="language">Language</label>
+                                <select id="language">
+                                    <option value="en">English</option>
+                                    <option value="es">Spanish</option>
+                                    <option value="fr">French</option>
+                                    <option value="de">German</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeAgentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal">
+        <div class="modal-overlay" onclick="closeUploadModal()"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Upload Knowledge Base</h2>
+                <button class="modal-close" onclick="closeUploadModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="upload-form">
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label for="kb-name">Knowledge Base Name *</label>
+                        <input type="text" id="kb-name" placeholder="Product Documentation" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="kb-description">Description</label>
+                        <textarea id="kb-description" rows="2" placeholder="Information about our products and services"></textarea>
+                    </div>
+                    <div class="upload-zone" id="upload-zone">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <path d="M24 32V16M24 16L16 24M24 16L32 24" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+                            <path d="M12 36H36" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <p>Drag files here or click to browse</p>
+                        <span class="upload-hint">Supported: TXT, MD, PDF, CSV, JSON</span>
+                        <input type="file" id="kb-file" multiple accept=".txt,.md,.pdf,.csv,.json" style="display: none;">
+                    </div>
+                    <div id="file-list" class="file-list"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

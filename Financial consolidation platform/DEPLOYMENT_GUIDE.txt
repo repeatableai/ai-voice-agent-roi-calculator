@@ -1,0 +1,180 @@
+================================================================================
+  CONSTELLATION CONSOLIDATOR - DEPLOYMENT GUIDE
+  AI-Powered Financial Consolidation Platform
+================================================================================
+
+QUICK DEPLOYMENT (3 COMMANDS)
+================================================================================
+
+1. Extract the archive:
+   $ tar -xzf constellation-consolidator.tar.gz
+   $ cd constellation-consolidator
+
+2. (Optional) Add your OpenAI API key:
+   $ nano .env
+   # Add: OPENAI_API_KEY=sk-your-api-key-here
+
+3. Start the application:
+   $ ./start.sh
+
+That's it! The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/docs
+
+
+PREREQUISITES
+================================================================================
+
+✓ Docker Desktop
+  - Download: https://www.docker.com/products/docker-desktop
+  - Required for running the application
+  - Must be running before executing ./start.sh
+
+✓ OpenAI API Key (Optional, for AI features)
+  - Get key: https://platform.openai.com/api-keys
+  - Required only for AI-powered account mapping
+
+
+WHAT'S INCLUDED
+================================================================================
+
+constellation-consolidator/
+├── start.sh              ← Run this to start everything
+├── README.md             ← Full documentation
+├── docker-compose.yml    ← Container orchestration
+├── .env                  ← Configuration (add your OpenAI key here)
+├── backend/              ← Python/FastAPI backend
+│   ├── main.py
+│   ├── init_db.py
+│   ├── requirements.txt
+│   └── app/
+└── frontend/             ← React frontend
+    ├── package.json
+    ├── public/
+    └── src/
+
+
+SERVICES & PORTS
+================================================================================
+
+Service          Port    URL
+------------------------------------------------------------------------
+PostgreSQL       5432    localhost:5432
+Backend API      8000    http://localhost:8000
+API Docs         8000    http://localhost:8000/docs
+Frontend         3000    http://localhost:3000
+
+
+COMMON COMMANDS
+================================================================================
+
+Start services:
+$ ./start.sh
+
+Stop services:
+$ docker-compose down
+
+View logs:
+$ docker-compose logs -f
+
+Check status:
+$ docker-compose ps
+
+Restart a service:
+$ docker-compose restart backend
+
+
+FIRST TIME SETUP
+================================================================================
+
+1. Open http://localhost:3000 in your browser
+
+2. Register a new user account
+   - Click "Register"
+   - Enter your details
+   - Click "Register"
+
+3. You're now logged in to the dashboard!
+
+4. Next steps:
+   - Add companies (Companies page)
+   - Create master chart of accounts
+   - Map accounts using AI
+   - Import transactions
+   - Run consolidation
+
+
+TROUBLESHOOTING
+================================================================================
+
+Problem: "Docker is not running"
+Solution: Start Docker Desktop and wait for it to fully initialize
+
+Problem: "Port already in use"
+Solution: Stop conflicting service or edit docker-compose.yml to change ports
+
+Problem: Frontend not loading
+Solution: docker-compose logs frontend
+         docker-compose restart frontend
+
+Problem: Backend errors
+Solution: docker-compose logs backend
+         Check .env file is configured correctly
+
+
+FEATURES
+================================================================================
+
+✓ Secure JWT Authentication
+✓ Multi-company consolidation
+✓ AI-powered account mapping (requires OpenAI key)
+✓ Automated intercompany eliminations
+✓ Transaction management
+✓ Consolidated financial reports
+✓ RESTful API with interactive docs
+
+
+ARCHITECTURE
+================================================================================
+
+3 Docker containers work together:
+
+1. PostgreSQL Database
+   - Stores all data
+   - 9 database tables
+   - Automatic initialization
+
+2. Backend API (FastAPI)
+   - RESTful API
+   - Business logic
+   - AI integration
+   - Authentication
+
+3. Frontend (React)
+   - User interface
+   - Single-page application
+   - Modern, responsive design
+
+
+SECURITY NOTES
+================================================================================
+
+⚠️  Change default database password in production
+⚠️  Use strong SECRET_KEY in production
+⚠️  Keep OpenAI API key secure
+⚠️  Run behind HTTPS in production
+⚠️  Update ports if needed for security
+
+
+SUPPORT
+================================================================================
+
+Documentation: See README.md in the extracted folder
+API Docs: http://localhost:8000/docs (once running)
+Issues: Report bugs via your issue tracker
+
+
+================================================================================
+Version 1.0.0 - Enterprise Financial Consolidation Platform
+Built with FastAPI, React, PostgreSQL, and OpenAI
+================================================================================
