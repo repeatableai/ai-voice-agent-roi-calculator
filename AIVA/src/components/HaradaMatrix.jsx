@@ -36,22 +36,32 @@ export default function HaradaMatrix({ haradaData, companyName, jobTitle, delive
           <tbody>
             {haradaData.deliverables.map((matrixRow, index) => {
               const correspondingDeliverable = deliverables.find((d, i) => i === index);
+              const isFrustrationDeliverable = correspondingDeliverable?.category === 'custom-frustration';
 
               return (
                 <tr
                   key={index}
                   className={`cursor-pointer transition-all duration-200 ${
-                    index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                    isFrustrationDeliverable
+                      ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500'
+                      : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                   } hover:bg-blue-100 hover:shadow-md hover:scale-[1.01]`}
                   onClick={() => correspondingDeliverable && onDeliverableClick(correspondingDeliverable, index)}
                 >
-                  <td className="p-4 border border-gray-300 font-bold text-blue-600 text-lg">
+                  <td className={`p-4 border border-gray-300 font-bold text-lg ${isFrustrationDeliverable ? 'text-amber-600' : 'text-blue-600'}`}>
                     {index + 1}
                   </td>
                   <td className="p-4 border border-gray-300">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-900">{matrixRow.name}</span>
-                      <ChevronRight className="w-5 h-5 text-blue-500" />
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{matrixRow.name}</span>
+                        {isFrustrationDeliverable && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-900">
+                            Your Challenge
+                          </span>
+                        )}
+                      </div>
+                      <ChevronRight className={`w-5 h-5 ${isFrustrationDeliverable ? 'text-amber-500' : 'text-blue-500'}`} />
                     </div>
                   </td>
                   <td className="p-4 border border-gray-300">
@@ -101,19 +111,33 @@ export default function HaradaMatrix({ haradaData, companyName, jobTitle, delive
       <div className="lg:hidden space-y-4">
         {haradaData.deliverables.map((matrixRow, index) => {
           const correspondingDeliverable = deliverables.find((d, i) => i === index);
+          const isFrustrationDeliverable = correspondingDeliverable?.category === 'custom-frustration';
 
           return (
             <div
               key={index}
-              className="border-2 border-gray-300 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer"
+              className={`border-2 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer ${
+                isFrustrationDeliverable ? 'border-amber-400' : 'border-gray-300'
+              }`}
               onClick={() => correspondingDeliverable && onDeliverableClick(correspondingDeliverable, index)}
             >
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex justify-between items-center">
-                <div className="flex items-center">
-                  <span className="font-bold mr-3 text-xl">{index + 1}.</span>
-                  <span className="font-semibold">{matrixRow.name}</span>
+              <div className={`text-white p-4 flex justify-between items-center ${
+                isFrustrationDeliverable
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600'
+              }`}>
+                <div className="flex items-center flex-1 min-w-0">
+                  <span className="font-bold mr-3 text-xl flex-shrink-0">{index + 1}.</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold truncate">{matrixRow.name}</span>
+                    {isFrustrationDeliverable && (
+                      <span className="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full mt-1 inline-block self-start">
+                        Your Challenge
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-6 h-6 flex-shrink-0 ml-2" />
               </div>
 
               <div className="p-4 bg-white">

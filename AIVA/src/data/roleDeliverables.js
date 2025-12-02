@@ -64,7 +64,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Review call recordings, practice advanced objection handling, role-play scenarios',
         expectedImpact: 'Accelerates ramp time by 60%, improves win rate 20-30%'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has instant competitive intelligence improved your win rate or deal velocity?',
+          options: [
+            { value: 'won_competitive', label: 'Yes, won 1-2 competitive deals I might have lost', impact: 'high' },
+            { value: 'faster_objection', label: 'Yes, I handle objections 50%+ faster', impact: 'high' },
+            { value: 'more_confident', label: 'Yes, I feel more confident on calls', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to use it effectively', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did confident objection handling prevent a deal from stalling or going dark?',
+          options: [
+            { value: 'saved_deal', label: 'Yes, kept momentum on a deal worth $25K+', impact: 'high' },
+            { value: 'prevented_stall', label: 'Yes, prevented the "let me think about it" stall', impact: 'medium' },
+            { value: 'better_discovery', label: 'Yes, turned objections into better discovery', impact: 'medium' },
+            { value: 'none_yet', label: 'Haven\'\'t seen this impact yet', impact: 'none' }
+          ]
+        }
+      ]
     },
     {
       id: 3,
@@ -90,7 +111,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Analyze pipeline health, identify at-risk deals, strategize high-value opportunities',
         expectedImpact: 'Increases pipeline quality 30-40%, accelerates deal velocity'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has eliminating data entry freed you for more selling time?',
+          options: [
+            { value: 'more_calls', label: 'Yes, I make 15-30% more calls per day', impact: 'high' },
+            { value: 'better_work_life', label: 'Yes, I leave work 30-45 mins earlier daily', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, end-of-day admin stress is gone', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still adjusting my routine', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Has better activity tracking improved your manager visibility or quota attainment?',
+          options: [
+            { value: 'hit_quota', label: 'Yes, helped me hit/exceed quota this month', impact: 'high' },
+            { value: 'better_visibility', label: 'Yes, manager sees my work more clearly', impact: 'medium' },
+            { value: 'accurate_tracking', label: 'Yes, my metrics are finally accurate', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' }
+          ]
+        }
+      ]
     },
     {
       id: 4,
@@ -116,7 +158,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Research key accounts, identify all decision makers, understand org structure and politics',
         expectedImpact: 'Increases multi-threading success rate, shortens sales cycles by 30-40%'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has clean CRM data helped you close deals faster or improved team efficiency?',
+          options: [
+            { value: 'faster_deals', label: 'Yes, reduced time spent hunting for information by 50%+', impact: 'high' },
+            { value: 'better_handoffs', label: 'Yes, AE handoffs are smoother and faster', impact: 'high' },
+            { value: 'manager_happy', label: 'Yes, manager/sales ops praised my data quality', impact: 'medium' },
+            { value: 'no_impact', label: 'No noticeable impact yet', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated data enrichment reveal insights that led to better targeting?',
+          options: [
+            { value: 'better_targeting', label: 'Yes, identified 10+ high-value accounts I\'d missed', impact: 'high' },
+            { value: 'fixed_attribution', label: 'Yes, finally know which campaigns actually work', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved me 60-90 mins of manual cleanup weekly', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'t leveraged this yet', impact: 'none' }
+          ]
+        }
+      ]
     },
     {
       id: 5,
@@ -142,7 +205,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Practice objection handling, improve discovery questions, refine pitch delivery',
         expectedImpact: 'Shortens ramp time by 50%, increases confidence and close rates'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has up-to-date competitive intelligence helped you win more deals?',
+          options: [
+            { value: 'won_deals', label: 'Yes, won 1-2 competitive deals I might have lost', impact: 'high' },
+            { value: 'faster_prep', label: 'Yes, reduced meeting prep time by 80%+', impact: 'high' },
+            { value: 'more_confident', label: 'Yes, I feel much more confident in competitive situations', impact: 'medium' },
+            { value: 'still_learning', label: 'Still building confidence with this', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did instant competitive briefings improve your performance in team meetings or deals?',
+          options: [
+            { value: 'team_leader', label: 'Yes, became the go-to competitive expert on my team', impact: 'high' },
+            { value: 'better_discovery', label: 'Yes, ask better qualification questions now', impact: 'medium' },
+            { value: 'saved_weekend', label: 'Yes, no more weekend research prep', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'t tested this in real situations yet', impact: 'none' }
+          ]
+        }
+      ]
     }
   ],
 
@@ -255,7 +339,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Deep customer business strategy sessions, industry insights sharing, peer networking',
         expectedImpact: 'Becomes trusted advisor, drives executive sponsorship, unlocks enterprise-wide expansion'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did data-driven QBRs lead to expansion opportunities or stronger executive relationships?',
+          options: [
+            { value: 'expansion_closed', label: 'Yes, closed an expansion deal worth $50K+ ARR', impact: 'high' },
+            { value: 'exec_relationship', label: 'Yes, gained executive sponsor or C-level champion', impact: 'high' },
+            { value: 'better_qbrs', label: 'Yes, QBRs are now 3x more impactful', impact: 'medium' },
+            { value: 'still_testing', label: 'Still refining my QBR approach', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated QBR prep free you for higher-value strategic work?',
+          options: [
+            { value: 'more_accounts', label: 'Yes, now manage 20-30% more accounts effectively', impact: 'high' },
+            { value: 'strategic_focus', label: 'Yes, spend more time on strategy vs. data gathering', impact: 'medium' },
+            { value: 'better_prep', label: 'Yes, prep in 1 hour vs. 2 full days', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable change yet', impact: 'none' }
+          ]
+        }
+      ]
     },
     {
       id: 4,
@@ -281,7 +386,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Help customers discover innovative ways to use your product, document success stories, build case studies',
         expectedImpact: 'Drives deeper product engagement, creates referenceable customers, increases expansion revenue 50-80%'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did personalized feature adoption campaigns improve customer usage or expansion?',
+          options: [
+            { value: 'drove_expansion', label: 'Yes, drove expansion deal worth $25K+ ARR', impact: 'high' },
+            { value: 'adoption_success', label: 'Yes, beat feature adoption OKR by 20%+', impact: 'high' },
+            { value: 'better_engagement', label: 'Yes, customers 2x more engaged with new features', impact: 'medium' },
+            { value: 'still_rolling_out', label: 'Still rolling out adoption strategy', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did scalable enablement free you to manage more accounts effectively?',
+          options: [
+            { value: 'more_capacity', label: 'Yes, now manage 25-40% more accounts', impact: 'high' },
+            { value: 'faster_enablement', label: 'Yes, enablement time reduced by 75%+', impact: 'medium' },
+            { value: 'better_results', label: 'Yes, adoption rates doubled vs. manual approach', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable capacity change', impact: 'none' }
+          ]
+        }
+      ]
     },
     {
       id: 5,
@@ -307,7 +433,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Partner with product team on roadmap priorities, beta test new features, drive customer advisory board',
         expectedImpact: 'Positions you as strategic product partner, influences roadmap, builds stronger customer relationships'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did synthesized customer feedback influence product roadmap decisions?',
+          options: [
+            { value: 'roadmap_prioritization', label: 'Yes, product team prioritized 2+ features based on my feedback', impact: 'high' },
+            { value: 'prevented_waste', label: 'Yes, prevented building wrong feature (saved months of dev time)', impact: 'high' },
+            { value: 'better_influence', label: 'Yes, I now have more influence with product team', impact: 'medium' },
+            { value: 'still_building', label: 'Still building product relationship', impact: 'none' }
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did systematic feedback analysis improve customer retention or satisfaction?',
+          options: [
+            { value: 'prevented_churn', label: 'Yes, identified churn risk patterns and saved 2+ accounts', impact: 'high' },
+            { value: 'improved_nps', label: 'Yes, NPS improved by 10+ points', impact: 'medium' },
+            { value: 'faster_insights', label: 'Yes, surface insights 10x faster than manual process', impact: 'medium' },
+            { value: 'no_impact', label: 'No measurable retention impact yet', impact: 'none' }
+          ]
+        }
+      ]
     }
   ],
 
@@ -373,7 +520,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Focus on architectural challenges, performance optimization, strategic technical initiatives',
         expectedImpact: 'Solves harder problems, accelerates career growth, increases technical impact'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did improved communication drive better engagement or response rates?',
+          options: [
+            { value: 'better_responses', label: 'Yes, response rates increased 40-60%', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, saved 5-8 hours/week on email composition', impact: 'high' },
+            { value: 'better_quality', label: 'Yes, messages are more personalized and effective', impact: 'medium' },
+            { value: 'still_testing', label: 'Still testing different approaches', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did faster communication improve relationships or outcomes?',
+          options: [
+            { value: 'stronger_relationships', label: 'Yes, respond 3-5x faster, relationships strengthened', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, closed 2+ deals/projects faster', impact: 'medium' },
+            { value: 'less_stress', label: 'Yes, inbox zero is now achievable daily', impact: 'medium' },
+            { value: 'no_impact', label: 'No measurable relationship impact', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -399,7 +567,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Mentor junior engineers, drive architectural vision, evaluate emerging technologies',
         expectedImpact: 'Accelerates team capability, improves system design quality, positions for Staff Engineer role'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -425,7 +614,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Design scalable architectures, establish coding standards, build reusable components',
         expectedImpact: 'Reduces future technical debt, improves code quality, accelerates team velocity long-term'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -451,7 +661,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Build performance monitoring dashboards, establish SLAs, implement proactive optimization',
         expectedImpact: 'Prevents performance issues before customers notice, improves system reliability, builds trust'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -527,7 +758,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Develop unique brand positioning, create compelling narratives, build thought leadership',
         expectedImpact: 'Differentiates brand in crowded market, builds executive visibility, drives inbound interest'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -553,7 +805,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Design and run high-impact growth experiments, test new channels, optimize conversion funnels',
         expectedImpact: 'Discovers new growth channels, accelerates learning velocity, drives breakthrough results'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -579,7 +852,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Analyze drop-off points, run landing page experiments, optimize email engagement',
         expectedImpact: 'Increases conversion rates 25-40%, maximizes ROI from existing traffic'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -605,7 +899,28 @@ export const ROLE_DELIVERABLES = {
         description: 'Define new market category, build thought leadership, establish brand as industry leader',
         expectedImpact: 'Creates lasting competitive advantage, commands premium pricing, attracts top talent'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -715,7 +1030,7 @@ For organizations hiring 40-60 people annually: $300K-$900K in combined quality 
       additionalRippleEffects: `The direct calculation shows ${(106 * hourlyRate).toFixed(0)} in payroll freed. But here's what the numbers can't fully capture:
 
 **Downstream Hiring Quality Effects:**
-When candidate screening improves, you don't just fill roles faster—you fill them with better people. Better hires stay longer (18-month average tenure becomes 36+ months), perform better (20-30% higher productivity in first year), and refer more quality candidates (2-3x more employee referrals).
+When candidate screening improves, you don\'t just fill roles faster—you fill them with better people. Better hires stay longer (18-month average tenure becomes 36+ months), perform better (20-30% higher productivity in first year), and refer more quality candidates (2-3x more employee referrals).
 
 One great hire in a leadership role influences 5-15 other roles through team building, culture setting, and organizational standards. Over 24 months, that single improved hire decision compounds into $80K-$200K in prevented turnover and team performance improvement.
 
@@ -815,7 +1130,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build career leveling frameworks, design equity programs, create retention strategies',
         expectedImpact: 'Improves pay equity, reduces turnover by 30-50%, attracts higher-quality candidates'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -841,7 +1177,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build continuous feedback culture, implement OKRs, develop manager coaching programs',
         expectedImpact: 'Shifts from annual reviews to ongoing development, improves performance 25-40%'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -867,7 +1224,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Personally mentor new hires, ensure strong starts, build connection to company culture',
         expectedImpact: 'Accelerates time-to-productivity by 40%, builds strong culture, reduces early-tenure turnover'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -933,7 +1311,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build dashboards, automate routine reports, improve data accuracy, reduce manual work',
         expectedImpact: 'Reduces close cycle time by 40%, improves data accuracy, frees team for strategic work'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -959,7 +1358,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate M&A opportunities, assess new business models, conduct competitive financial analysis',
         expectedImpact: 'Influences major strategic decisions, identifies high-ROI opportunities, drives 20-40% better capital allocation'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -985,7 +1405,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Optimize cash deployment, evaluate investment opportunities, manage banking relationships',
         expectedImpact: 'Improves cash efficiency 20-30%, reduces borrowing costs, maximizes interest income'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1011,7 +1452,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build predictive revenue models, identify trends before they\'re obvious, provide forward-looking insights',
         expectedImpact: 'Shifts finance from reporting the past to predicting the future, drives proactive decision-making'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1077,7 +1539,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Analyze quality trend data and implement early warning systems',
         expectedImpact: 'Reduces defect rates 15-25% over 12 months'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1100,7 +1583,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Proactive supplier relationship management and multi-sourcing strategy',
         expectedImpact: 'Reduces supply disruptions 40-60%, improves supplier performance'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1126,7 +1630,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build training programs, cross-train team members, develop future supervisors',
         expectedImpact: 'Team productivity +15-25%, turnover -30-40%, builds leadership pipeline'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1152,7 +1677,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate equipment ROI, plan capital investments, optimize maintenance strategies',
         expectedImpact: 'Improves OEE by 5-10 points, reduces emergency maintenance 50-70%, optimizes capex decisions'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1228,7 +1774,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate project priorities, recommend resource reallocation, improve project selection',
         expectedImpact: 'Delivers 30-50% more business value with same resources'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1254,7 +1821,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build resource forecasting models, identify skill gaps, develop cross-training programs',
         expectedImpact: 'Reduces resource conflicts by 60%, improves team flexibility and resilience'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1280,7 +1868,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Focus on change adoption, remove organizational blockers, drive transformation initiatives',
         expectedImpact: 'Increases project success rate 40-60%, builds change management capability'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did improved communication drive better engagement or response rates?',
+          options: [
+            { value: 'better_responses', label: 'Yes, response rates increased 40-60%', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, saved 5-8 hours/week on email composition', impact: 'high' },
+            { value: 'better_quality', label: 'Yes, messages are more personalized and effective', impact: 'medium' },
+            { value: 'still_testing', label: 'Still testing different approaches', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did faster communication improve relationships or outcomes?',
+          options: [
+            { value: 'stronger_relationships', label: 'Yes, respond 3-5x faster, relationships strengthened', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, closed 2+ deals/projects faster', impact: 'medium' },
+            { value: 'less_stress', label: 'Yes, inbox zero is now achievable daily', impact: 'medium' },
+            { value: 'no_impact', label: 'No measurable relationship impact', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1306,7 +1915,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build PM frameworks, create templates and playbooks, establish project standards',
         expectedImpact: 'Standardizes excellence across all projects, accelerates new PM ramp time, improves predictability'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1382,7 +2012,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build relationships with target accounts, develop multi-threading strategies, create pipeline',
         expectedImpact: 'Increases pipeline by 50-80%, improves predictability, exceeds quota consistently'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1408,7 +2059,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Develop account penetration strategies, identify expansion opportunities, build executive relationships',
         expectedImpact: 'Increases account revenue 60-120% through expansions and upsells'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1434,7 +2106,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Analyze lost deals to improve win rate, develop playbooks for different deal types, mentor junior AEs',
         expectedImpact: 'Increases win rate 15-25%, shortens sales cycles, builds team capability'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1460,7 +2153,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Learn contract negotiation tactics, build relationships with customer procurement, master enterprise sales cycles',
         expectedImpact: 'Increases enterprise deal close rate 30-50%, shortens legal review cycles, builds executive presence'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1489,7 +2203,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Develop long-term roadmap, conduct user research, analyze competitive landscape, define product strategy',
         expectedImpact: 'Builds differentiated product, captures larger market share, drives company valuation'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -1515,7 +2250,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Conduct customer interviews, prototype new concepts, explore emerging needs, validate assumptions',
         expectedImpact: 'Discovers breakthrough product opportunities, builds customer loyalty, drives innovation'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did improved communication drive better engagement or response rates?',
+          options: [
+            { value: 'better_responses', label: 'Yes, response rates increased 40-60%', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, saved 5-8 hours/week on email composition', impact: 'high' },
+            { value: 'better_quality', label: 'Yes, messages are more personalized and effective', impact: 'medium' },
+            { value: 'still_testing', label: 'Still testing different approaches', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did faster communication improve relationships or outcomes?',
+          options: [
+            { value: 'stronger_relationships', label: 'Yes, respond 3-5x faster, relationships strengthened', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, closed 2+ deals/projects faster', impact: 'medium' },
+            { value: 'less_stress', label: 'Yes, inbox zero is now achievable daily', impact: 'medium' },
+            { value: 'no_impact', label: 'No measurable relationship impact', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1541,7 +2297,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build integration partnerships, explore platform opportunities, develop ecosystem strategy',
         expectedImpact: 'Creates competitive moat, drives network effects, accelerates growth'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1567,7 +2344,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Conduct ongoing customer interviews, observe users in their environment, build deep empathy',
         expectedImpact: 'Discovers unmet needs before competitors, builds products customers love, drives word-of-mouth growth'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1593,7 +2391,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build relationships with industry analysts, create category leadership, drive product PR',
         expectedImpact: 'Positions product as category leader, drives inbound demand, influences industry direction'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1622,7 +2441,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Negotiate better terms, develop alternative suppliers, build strategic partnerships',
         expectedImpact: 'Reduces supplier costs 10-20%, improves reliability, builds supply chain resilience'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -1648,7 +2488,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build contingency plans, diversify suppliers and routes, develop early warning systems',
         expectedImpact: 'Reduces disruption impact by 60-80%, prevents costly emergency measures'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1674,7 +2535,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate new suppliers, explore global sourcing, optimize supplier mix, drive innovation',
         expectedImpact: 'Reduces total cost of ownership 15-25%, improves supply chain agility'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1700,7 +2582,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build sales & operations planning process, improve demand forecasting accuracy, optimize inventory turns',
         expectedImpact: 'Reduces inventory costs 20-30%, improves on-time delivery 40%, increases forecast accuracy'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1726,7 +2629,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Develop supplier innovation partnerships, explore nearshoring opportunities, build supply chain resilience',
         expectedImpact: 'Reduces costs 20-30% while improving reliability, positions supply chain as competitive advantage'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1755,7 +2679,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build automated test frameworks, improve CI/CD pipelines, reduce manual testing burden',
         expectedImpact: 'Increases test coverage 50-80%, reduces release cycle time, catches bugs earlier'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -1781,7 +2726,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Analyze bug patterns, identify systemic issues, improve development processes to prevent bugs',
         expectedImpact: 'Reduces bug volume by 40-60%, improves product quality, builds culture of quality'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1807,7 +2773,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build quality dashboards, track trends, establish quality standards, drive team quality culture',
         expectedImpact: 'Reduces production incidents by 50-70%, improves team velocity, builds trust with customers'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1833,7 +2820,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build test-driven development practices, implement CI/CD quality gates, coach developers on testing',
         expectedImpact: 'Reduces bugs reaching production by 60-80%, accelerates release velocity, builds quality culture'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1859,7 +2867,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Research emerging quality methodologies, attend conferences, bring best practices to team',
         expectedImpact: 'Positions team as quality leader, drives continuous improvement, builds engineering excellence'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -1888,7 +2917,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Monitor systems for early warning signs, fix issues before users report them, prevent outages',
         expectedImpact: 'Reduces ticket volume by 30-50%, improves uptime, shifts from reactive to proactive IT'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did better documentation improve team knowledge or onboarding?',
+          options: [
+            { value: 'faster_onboarding', label: 'Yes, new team members ramp 50-70% faster', impact: 'high' },
+            { value: 'knowledge_sharing', label: 'Yes, team shares knowledge 3x more effectively', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, answer same questions 80% less often', impact: 'medium' },
+            { value: 'still_building', label: 'Still building documentation library', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive documentation reduce repetitive questions or errors?',
+          options: [
+            { value: 'fewer_errors', label: 'Yes, errors reduced by 50-70%', impact: 'high' },
+            { value: 'self_service', label: 'Yes, team finds answers themselves now', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, freed 3-5 hours/week from answering questions', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable reduction in questions', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -1914,7 +2964,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Create training materials, build self-service tools, empower users to solve common issues',
         expectedImpact: 'Reduces ticket volume by 40-60%, improves user satisfaction, frees IT for strategic work'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -1940,7 +3011,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate new technologies, plan cloud migrations, improve security posture, drive innovation',
         expectedImpact: 'Reduces IT costs 20-30%, improves security, enables business growth'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did better documentation improve team knowledge or onboarding?',
+          options: [
+            { value: 'faster_onboarding', label: 'Yes, new team members ramp 50-70% faster', impact: 'high' },
+            { value: 'knowledge_sharing', label: 'Yes, team shares knowledge 3x more effectively', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, answer same questions 80% less often', impact: 'medium' },
+            { value: 'still_building', label: 'Still building documentation library', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive documentation reduce repetitive questions or errors?',
+          options: [
+            { value: 'fewer_errors', label: 'Yes, errors reduced by 50-70%', impact: 'high' },
+            { value: 'self_service', label: 'Yes, team finds answers themselves now', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, freed 3-5 hours/week from answering questions', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable reduction in questions', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -1966,7 +3058,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Evaluate cloud migration, implement zero-trust security, modernize IT infrastructure',
         expectedImpact: 'Reduces IT costs 25-40%, improves security posture, enables business agility'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -1992,7 +3105,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build security monitoring dashboards, implement zero-trust architecture, conduct security training',
         expectedImpact: 'Prevents 80% of security incidents before they occur, improves compliance, protects company data'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -2021,7 +3155,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Nurture existing partnerships, drive co-marketing initiatives, maximize partner-sourced revenue',
         expectedImpact: 'Increases partner-sourced revenue 100-200%, builds strategic ecosystem, creates competitive moat'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -2047,7 +3202,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Source high-value partnership opportunities, negotiate complex deals, build strategic relationships',
         expectedImpact: 'Closes 3-5 major partnerships annually worth $10M+ in combined value'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -2073,7 +3249,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build C-suite relationships with partners, provide strategic guidance, position as trusted advisor',
         expectedImpact: 'Unlocks enterprise-wide partnerships, drives strategic deals, builds long-term competitive advantage'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -2099,7 +3296,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Recruit new tier-1 partners, build partner community, create partner innovation programs',
         expectedImpact: 'Grows partner-sourced revenue 150-250%, builds ecosystem competitive advantage'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -2125,7 +3343,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Build C-level relationships with potential partners, negotiate complex terms, close transformational deals',
         expectedImpact: 'Closes 2-3 strategic deals annually that create 10x value through market access and brand elevation'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     }
   ],
 
@@ -2154,7 +3393,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Coordinate cross-functional projects, manage strategic initiatives, provide high-level executive support',
         expectedImpact: 'Accelerates executive productivity 30-50%, enables CEO to focus on highest-value activities'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -2180,7 +3440,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Manage executive relationships, handle sensitive communications, coordinate with board and investors',
         expectedImpact: 'Strengthens executive relationships, improves stakeholder satisfaction, protects executive time'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -2206,7 +3487,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Conduct research for strategic decisions, analyze options, provide decision frameworks',
         expectedImpact: 'Accelerates executive decision-making 40-60%, improves decision quality'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -2232,7 +3534,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Protect executive time, filter low-value requests, ensure focus on highest-impact activities',
         expectedImpact: 'Increases executive productivity 30-50%, improves work-life balance, protects strategic thinking time'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -2258,7 +3581,28 @@ Total value of strategic reallocation: $300K-$750K annually beyond direct produc
         description: 'Draft executive communications, write board presentations, craft strategic messaging',
         expectedImpact: 'Elevates executive presence, drives organizational alignment, positions for Chief of Staff role'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ]
 };
@@ -2296,7 +3640,28 @@ export const getDeliverablesForRole = (jobTitle, hourlyRate) => {
         description: 'Apply insights to high-value strategic initiatives',
         expectedImpact: 'Faster decision-making and more informed strategic direction'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did faster research lead to better outcomes or insights?',
+          options: [
+            { value: 'better_outcomes', label: 'Yes, discovered critical insights I would have missed', impact: 'high' },
+            { value: 'faster_decisions', label: 'Yes, made decisions 3-5x faster', impact: 'high' },
+            { value: 'deeper_analysis', label: 'Yes, analyzed 3-5x more options in same time', impact: 'medium' },
+            { value: 'still_learning', label: 'Still learning to leverage this', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive analysis prevent costly mistakes or improve quality?',
+          options: [
+            { value: 'prevented_mistake', label: 'Yes, caught issues that would have cost $10K-$50K+', impact: 'high' },
+            { value: 'higher_quality', label: 'Yes, quality of analysis improved significantly', impact: 'medium' },
+            { value: 'more_thorough', label: 'Yes, analysis is 2-3x more thorough now', impact: 'medium' },
+            { value: 'not_yet', label: 'Haven\'\'t seen this benefit yet', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 2,
@@ -2322,7 +3687,28 @@ export const getDeliverablesForRole = (jobTitle, hourlyRate) => {
         description: 'Invest freed time in deeper stakeholder engagement',
         expectedImpact: 'Stronger relationships and better organizational alignment'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did better documentation improve team knowledge or onboarding?',
+          options: [
+            { value: 'faster_onboarding', label: 'Yes, new team members ramp 50-70% faster', impact: 'high' },
+            { value: 'knowledge_sharing', label: 'Yes, team shares knowledge 3x more effectively', impact: 'high' },
+            { value: 'saved_time', label: 'Yes, answer same questions 80% less often', impact: 'medium' },
+            { value: 'still_building', label: 'Still building documentation library', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did comprehensive documentation reduce repetitive questions or errors?',
+          options: [
+            { value: 'fewer_errors', label: 'Yes, errors reduced by 50-70%', impact: 'high' },
+            { value: 'self_service', label: 'Yes, team finds answers themselves now', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, freed 3-5 hours/week from answering questions', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable reduction in questions', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 3,
@@ -2348,7 +3734,28 @@ export const getDeliverablesForRole = (jobTitle, hourlyRate) => {
         description: 'Use freed time to improve systems and workflows',
         expectedImpact: 'Compound efficiency gains and team effectiveness improvements'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 4,
@@ -2374,7 +3781,28 @@ export const getDeliverablesForRole = (jobTitle, hourlyRate) => {
         description: 'Proactively identify and prevent future issues',
         expectedImpact: 'Reduced firefighting and more predictable operations'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Did automation improve speed or quality of this deliverable?',
+          options: [
+            { value: 'both_better', label: 'Yes, both speed (3x+) and quality improved significantly', impact: 'high' },
+            { value: 'speed_improved', label: 'Yes, complete this 5-10x faster now', impact: 'high' },
+            { value: 'quality_improved', label: 'Yes, quality/thoroughness improved 50%+', impact: 'medium' },
+            { value: 'still_optimizing', label: 'Still optimizing my approach', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did time savings enable higher-value work or better outcomes?',
+          options: [
+            { value: 'strategic_work', label: 'Yes, reallocated 5+ hours/week to strategic projects', impact: 'high' },
+            { value: 'better_outcomes', label: 'Yes, achieved measurably better business outcomes', impact: 'medium' },
+            { value: 'work_life', label: 'Yes, reduced overtime and improved work-life balance', impact: 'medium' },
+            { value: 'no_change', label: 'No significant impact beyond time saved', impact: 'none' },
+          ]
+        },
+      ]
     },
     {
       id: 5,
@@ -2400,7 +3828,28 @@ export const getDeliverablesForRole = (jobTitle, hourlyRate) => {
         description: 'Invest in deeper, more meaningful professional interactions',
         expectedImpact: 'Stronger network, better collaboration, and increased influence'
       },
-      additionalImpactQuestions: []
+      additionalImpactQuestions: [
+        {
+          id: 'q1',
+          question: 'Has faster reporting freed you for more strategic work?',
+          options: [
+            { value: 'more_strategic', label: 'Yes, freed 5-10 hours/week for strategic initiatives', impact: 'high' },
+            { value: 'better_insights', label: 'Yes, decisions are made 50%+ faster with real-time data', impact: 'high' },
+            { value: 'less_stress', label: 'Yes, eliminated end-of-week reporting stress', impact: 'medium' },
+            { value: 'still_adjusting', label: 'Still optimizing my workflow', impact: 'none' },
+          ]
+        },
+        {
+          id: 'q2',
+          question: 'Did automated reporting improve team alignment or decision quality?',
+          options: [
+            { value: 'better_decisions', label: 'Yes, team makes better-informed decisions weekly', impact: 'high' },
+            { value: 'team_alignment', label: 'Yes, everyone has visibility they didn\'t before', impact: 'medium' },
+            { value: 'saved_time', label: 'Yes, saved 2-4 hours of manual work weekly', impact: 'medium' },
+            { value: 'no_change', label: 'No measurable impact yet', impact: 'none' },
+          ]
+        },
+      ]
     }
   ];
 };

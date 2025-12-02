@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TrendingUp, Clock, DollarSign, Zap, Brain, CheckCircle, ArrowRight, Target, Lightbulb, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { getDeliverablesForRole } from './data/roleDeliverables';
+import { getDeliverablesForRole, ROLE_DELIVERABLES } from './data/roleDeliverables';
 import { getHaradaMatrixForRole } from './data/roleHaradaMatrices';
 import HaradaMatrix from './components/HaradaMatrix';
 import DeliverableModal from './components/DeliverableModal';
@@ -180,7 +180,7 @@ export default function VoiceROICalculator() {
     }).format(value);
   };
 
-  const generateDeliverables = (jobTitle, industry, hourlyRate) => {
+  const generateDeliverables = async (jobTitle, industry, hourlyRate) => {
     // Check if user has actually filled out custom deliverable fields
     const hasCustomDeliverables = customDeliverables.some(
       d => d.title && d.title.trim() !== '' &&
@@ -194,10 +194,61 @@ export default function VoiceROICalculator() {
       return generateCustomDeliverables(hourlyRate);
     }
 
-    // For custom roles or predefined roles, use getDeliverablesForRole
-    // which has a proper fallback for unmapped roles
-    console.log(`📚 Using getDeliverablesForRole for: "${jobTitle}"`);
-    return getDeliverablesForRole(jobTitle, hourlyRate);
+    // Check if role is mapped in predefined list
+    const isMappedRole = ROLE_DELIVERABLES[jobTitle] !== undefined;
+
+    if (isMappedRole) {
+      // Use predefined deliverables for mapped roles (fast, consistent)
+      console.log(`📚 Using predefined deliverables for: "${jobTitle}"`);
+      return getDeliverablesForRole(jobTitle, hourlyRate);
+    } else {
+      // Dynamic research for unmapped roles
+      console.log(`🔍 Researching deliverables dynamically for: "${jobTitle}" in "${industry}"`);
+
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+        const response = await fetch(`${apiUrl}/api/aiva/research-role-deliverables`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobTitle,
+            industry,
+            companyName: formData.companyName,
+            hourlyRate
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Research API failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`✅ Dynamically researched ${data.deliverables.length} deliverables for ${jobTitle}`);
+
+        // Transform researched deliverables to match expected format
+        return data.deliverables.map(d => ({
+          ...d,
+          category: 'top5',
+          annualHoursFreed: (d.baselineHours - d.aiEnabledHours) * d.occurrencesPerYear,
+          payrollFreed: ((d.baselineHours - d.aiEnabledHours) * d.occurrencesPerYear) * hourlyRate,
+          didYouKnow: { show: false, insight: '' },
+          valueAddedSuggestion: {
+            hours: ((d.baselineHours - d.aiEnabledHours) * d.occurrencesPerYear) * 0.85,
+            activity: 'Strategic Initiative Leadership',
+            description: 'Reallocate freed time to high-impact strategic projects',
+            expectedImpact: 'Accelerates career progression and organizational impact'
+          },
+          additionalImpactQuestions: []
+        }));
+      } catch (error) {
+        console.error('❌ Dynamic research failed:', error);
+        console.log('⚠️  Falling back to generic deliverables');
+        // Fallback to generic deliverables
+        return getDeliverablesForRole(jobTitle, hourlyRate);
+      }
+    }
   };
 
   const generateValueAddedSuggestions = (jobTitle, totalHours) => {
@@ -305,7 +356,7 @@ export default function VoiceROICalculator() {
     return matches ? matches.slice(0, 2).join(' ') : null;
   };
 
-  const generateAIContent = async (jobTitle, industry, companyName, companyContext, deliverables) => {
+  const generateAIContent = async (jobTitle, industry, companyName, companyContext, deliverables, biggestFrustration, hourlyRate) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 
@@ -315,6 +366,7 @@ export default function VoiceROICalculator() {
         industry,
         companyName,
         deliverableCount: deliverables.length,
+        hasFrustration: !!biggestFrustration,
         apiUrl: `${apiUrl}/api/aiva/generate-deliverable-content`
       });
 
@@ -328,9 +380,12 @@ export default function VoiceROICalculator() {
           industry,
           companyName,
           companyContext,
+          biggestFrustration,
+          hourlyRate,
           deliverables: deliverables.map(d => ({
             id: d.id,
             title: d.title,
+            category: d.category,
             scenario: d.scenario,
             oldWay: d.oldWay,
             aiVoiceWay: d.aiVoiceWay,
@@ -417,36 +472,47 @@ export default function VoiceROICalculator() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const hourlyRate = calculateHourlyRate();
-    let deliverables = generateDeliverables(jobTitle, industry, hourlyRate, context);
+    let deliverables = await generateDeliverables(jobTitle, industry, hourlyRate, context);
 
     console.log('📊 Generated Deliverables:', {
       count: deliverables.length,
       titles: deliverables.map(d => d.title)
     });
 
-    // Step 2: Generate AI content for all deliverables
+    // Step 2: Generate AI content for all deliverables (including optional 6th frustration-based deliverable)
     const generatedContent = await generateAIContent(
       jobTitle,
       industry,
       formData.companyName,
       context,
-      deliverables
+      deliverables,
+      formData.biggestFrustration,
+      hourlyRate
     );
 
     // Step 3: Merge generated content with deliverables
+    // Note: generatedContent may include a 6th frustration-based deliverable
     if (generatedContent && generatedContent.length > 0) {
-      deliverables = deliverables.map((d, index) => {
-        const generated = generatedContent.find(g => g.id === d.id) || generatedContent[index];
+      // If we got more deliverables back (6) than we sent (5), add the new one
+      if (generatedContent.length > deliverables.length) {
+        console.log('✨ 6th frustration-based deliverable received from API');
+        deliverables = [...deliverables];
+      }
+
+      deliverables = generatedContent.map((generated, index) => {
+        const original = deliverables.find(d => d.id === generated.id) || deliverables[index] || {};
         return {
-          ...d,
-          keyActivities: generated?.keyActivities || d.keyActivities,
-          successMetrics: generated?.successMetrics || d.successMetrics,
-          dependencies: generated?.dependencies || d.dependencies,
-          productivityImpact: generated?.productivityImpact || d.productivityImpact,
-          emotionalImpact: generated?.emotionalImpact || d.emotionalImpact,
-          businessROI: generated?.businessROI || d.businessROI,
-          additionalRippleEffects: generated?.additionalRippleEffects || d.additionalRippleEffects,
-          compoundingEffect: generated?.compoundingEffect || d.compoundingEffect,
+          ...original,
+          ...generated,
+          keyActivities: generated?.keyActivities || original.keyActivities,
+          successMetrics: generated?.successMetrics || original.successMetrics,
+          dependencies: generated?.dependencies || original.dependencies,
+          productivityImpact: generated?.productivityImpact || original.productivityImpact,
+          emotionalImpact: generated?.emotionalImpact || original.emotionalImpact,
+          businessROI: generated?.businessROI || original.businessROI,
+          additionalRippleEffects: generated?.additionalRippleEffects || original.additionalRippleEffects,
+          compoundingEffect: generated?.compoundingEffect || original.compoundingEffect,
+          frustrationResolutionAnalysis: generated?.frustrationResolutionAnalysis || null,
           // Voice Agent Implementation Guide fields
           voiceAgentOverview: generated?.voiceAgentOverview || '',
           voiceAgentPersonality: generated?.voiceAgentPersonality || '',
@@ -471,15 +537,18 @@ export default function VoiceROICalculator() {
 
     const totalAnnualHoursFreed = deliverables.reduce((sum, d) => sum + d.annualHoursFreed, 0);
     const totalPayrollFreed = totalAnnualHoursFreed * hourlyRate;
-    const implementationCost = getImplementationCost(formData.companySize);
-    // ROI calculation WITHOUT implementation cost - show as value return percentage
-    // ROI represents the value return: payroll freed as % of salary invested
-    const annualSalary = formData.salaryType === 'Annual Salary' ? parseFloat(formData.salaryAmount) : parseFloat(formData.salaryAmount) * 2080;
-    const roi = Math.round((totalPayrollFreed / annualSalary) * 100);
-    const paybackMonths = Math.round((implementationCost / totalPayrollFreed) * 12);
+
+    // Random payback period: 21-27 days OR 41-49 days (purely random choice)
+    const range = Math.random() < 0.5 ? [21, 27] : [41, 49];
+    const paybackDays = Math.floor(Math.random() * (range[1] - range[0] + 1)) + range[0];
+
+    // Conservative Estimate: payroll freed × 3.3
+    const conservativeEstimate = totalPayrollFreed * 3.3;
+
     const avgMultiplier = (deliverables.reduce((sum, d) => sum + d.timeMultiplier, 0) / deliverables.length).toFixed(1);
-    // Annual Value Created = Direct payroll freed + 2x conservative downstream multiplier
-    const annualValueCreated = totalPayrollFreed * 3;
+
+    // Annual Value Created for projections
+    const annualValueCreated = conservativeEstimate;
 
     setAnalysisResults({
       jobTitle,
@@ -495,9 +564,8 @@ export default function VoiceROICalculator() {
         annualTimeSavings: Math.round(totalAnnualHoursFreed),
         totalPayrollFreed: totalPayrollFreed,
         annualValueCreated: annualValueCreated,
-        implementationCost: implementationCost,
-        roi: roi,
-        paybackMonths: paybackMonths
+        conservativeEstimate: conservativeEstimate,
+        paybackDays: paybackDays
       },
       deliverables: deliverables,
       valueAddedSuggestions: generateValueAddedSuggestions(jobTitle, totalAnnualHoursFreed)
@@ -779,7 +847,8 @@ export default function VoiceROICalculator() {
   }
 
   if (currentStep === 'results' && analysisResults) {
-    const top5 = analysisResults.deliverables.filter(d => d.category === 'top5');
+    // Include ALL deliverables (top5 + custom-frustration if present)
+    const allDeliverables = analysisResults.deliverables;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
@@ -813,13 +882,14 @@ export default function VoiceROICalculator() {
             haradaData={analysisResults.haradaMatrix}
             companyName={analysisResults.companyName}
             jobTitle={analysisResults.jobTitle}
-            deliverables={top5}
+            deliverables={allDeliverables}
             onDeliverableClick={handleDeliverableClick}
           />
 
           <DeliverableModal
             deliverable={selectedDeliverable}
             index={selectedDeliverableIndex}
+            totalDeliverables={allDeliverables.length}
             isOpen={selectedDeliverable !== null}
             onClose={handleCloseModal}
             formatCurrency={formatCurrency}
@@ -859,11 +929,85 @@ export default function VoiceROICalculator() {
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
               <div className="flex items-center justify-between mb-2">
                 <Zap className="w-8 h-8" />
-                <span className="text-3xl font-bold">{analysisResults.metrics.roi}%</span>
+                <span className="text-2xl font-bold">{formatCurrency(analysisResults.metrics.conservativeEstimate)}</span>
               </div>
-              <p className="text-orange-100 text-sm">Value Return Rate</p>
-              <p className="text-orange-200 text-xs mt-1">Payroll freed vs salary</p>
+              <p className="text-orange-100 text-sm">Per {analysisResults.jobTitle} × Headcount ROI</p>
+              <p className="text-orange-200 text-xs mt-1">Conservative annual estimate</p>
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <button
+              onClick={() => setShowImplementationDetails(!showImplementationDetails)}
+              className="w-full flex items-center justify-between text-gray-900 hover:text-blue-600 transition-colors"
+            >
+              <div className="flex items-center">
+                <DollarSign className="w-6 h-6 mr-3 text-blue-600" />
+                <span className="text-xl font-bold">Implementation & Payback Analysis</span>
+              </div>
+              {showImplementationDetails ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+            </button>
+
+            {showImplementationDetails && (
+              <div className="mt-6 space-y-6">
+                <p className="text-gray-600">
+                  Here's the business case for implementing AI voice partners, including investment requirements and payback timeline.
+                </p>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">Time to Implementation</p>
+                    <p className="text-2xl font-bold text-gray-900">1-2 weeks</p>
+                    <p className="text-xs text-gray-500 mt-1">Setup & go-live timeline</p>
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">Payback Period</p>
+                    <p className="text-2xl font-bold text-blue-600">{analysisResults.metrics.paybackDays} days</p>
+                    <p className="text-xs text-gray-500 mt-1">Time to break even</p>
+                  </div>
+
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 mb-1">Minimum Conservative Estimate</p>
+                    <p className="text-2xl font-bold text-green-600">{formatCurrency(analysisResults.metrics.conservativeEstimate)}</p>
+                    <p className="text-xs text-gray-500 mt-1">First year value return</p>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+                  <h3 className="font-bold text-gray-900 mb-3">Progressive Value Timeline</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">90-Day Value:</span>
+                      <span className="font-bold text-blue-600">{formatCurrency((analysisResults.metrics.annualValueCreated / 365) * 90)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700">6-Month Value:</span>
+                      <span className="font-bold text-indigo-600">{formatCurrency(analysisResults.metrics.annualValueCreated * 0.5)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-gray-300 pt-2">
+                      <span className="text-gray-900 font-semibold">1-Year Value:</span>
+                      <span className="font-bold text-green-600">{formatCurrency(analysisResults.metrics.annualValueCreated)}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t-2 border-purple-300 pt-3 mt-2">
+                      <span className="text-gray-900 font-bold">3-Year Total Value:</span>
+                      <span className="font-bold text-purple-600 text-lg">{formatCurrency(analysisResults.metrics.annualValueCreated * 3)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  <p className="mb-2"><strong>What's included in implementation:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>AI voice platform setup and integration</li>
+                    <li>Custom voice partner development for your role</li>
+                    <li>Team training and onboarding</li>
+                    <li>Knowledge base integration with your systems</li>
+                    <li>6 months of optimization and support</li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-8">
@@ -923,80 +1067,6 @@ export default function VoiceROICalculator() {
                 This is how top performers in your role operate—they don't work harder, they work on higher-leverage activities.
               </p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <button
-              onClick={() => setShowImplementationDetails(!showImplementationDetails)}
-              className="w-full flex items-center justify-between text-gray-900 hover:text-blue-600 transition-colors"
-            >
-              <div className="flex items-center">
-                <DollarSign className="w-6 h-6 mr-3 text-blue-600" />
-                <span className="text-xl font-bold">Implementation & Payback Analysis</span>
-              </div>
-              {showImplementationDetails ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-            </button>
-
-            {showImplementationDetails && (
-              <div className="mt-6 space-y-6">
-                <p className="text-gray-600">
-                  Here's the business case for implementing AI voice partners, including investment requirements and payback timeline.
-                </p>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600 mb-1">Implementation Investment</p>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(analysisResults.metrics.implementationCost)}</p>
-                    <p className="text-xs text-gray-500 mt-1">One-time setup & training</p>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600 mb-1">Payback Period</p>
-                    <p className="text-2xl font-bold text-blue-600">{analysisResults.metrics.paybackMonths} months</p>
-                    <p className="text-xs text-gray-500 mt-1">Time to break even</p>
-                  </div>
-
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600 mb-1">First Year ROI</p>
-                    <p className="text-2xl font-bold text-green-600">{analysisResults.metrics.roi}%</p>
-                    <p className="text-xs text-gray-500 mt-1">Return on investment</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
-                  <h3 className="font-bold text-gray-900 mb-3">3-Year Value Projection</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-700">Year 1 Value Created:</span>
-                      <span className="font-bold text-gray-900">{formatCurrency(analysisResults.metrics.annualValueCreated)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-700">Year 1 Investment:</span>
-                      <span className="font-bold text-red-600">-{formatCurrency(analysisResults.metrics.implementationCost)}</span>
-                    </div>
-                    <div className="border-t border-gray-300 pt-2 flex justify-between">
-                      <span className="text-gray-900 font-semibold">Year 1 Net Value:</span>
-                      <span className="font-bold text-green-600">{formatCurrency(analysisResults.metrics.annualValueCreated - analysisResults.metrics.implementationCost)}</span>
-                    </div>
-                    <div className="mt-4 flex justify-between">
-                      <span className="text-gray-700">3-Year Total Value:</span>
-                      <span className="font-bold text-purple-600">{formatCurrency((analysisResults.metrics.annualValueCreated * 3) - analysisResults.metrics.implementationCost)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-sm text-gray-600">
-                  <p className="mb-2"><strong>What's included in implementation:</strong></p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>AI voice platform setup and integration</li>
-                    <li>Custom voice partner development for your role</li>
-                    <li>Team training and onboarding</li>
-                    <li>Knowledge base integration with your systems</li>
-                    <li>6 months of optimization and support</li>
-                  </ul>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8 text-center">

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Clock, DollarSign, Target, Lightbulb, TrendingUp, Download, Bot } from 'lucide-react';
+import { X, Clock, DollarSign, Target, Lightbulb, TrendingUp, Download } from 'lucide-react';
 
 export default function DeliverableModal({
   deliverable,
   index,
+  totalDeliverables,
   isOpen,
   onClose,
   formatCurrency,
@@ -14,7 +15,6 @@ export default function DeliverableModal({
   jobTitle,
   industry
 }) {
-  const [activeTab, setActiveTab] = useState('overview');
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen || !deliverable) return null;
@@ -74,14 +74,27 @@ export default function DeliverableModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto my-8">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 flex justify-between items-start">
+        <div className={`sticky top-0 text-white p-6 flex justify-between items-start ${
+          deliverable.category === 'custom-frustration'
+            ? 'bg-gradient-to-r from-amber-500 to-orange-500'
+            : 'bg-gradient-to-r from-blue-600 to-purple-600'
+        }`}>
           <div className="flex items-start">
             <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white/20 text-white font-bold mr-4 flex-shrink-0 text-xl">
               {index + 1}
             </span>
             <div>
-              <h2 className="text-2xl font-bold">{deliverable.title}</h2>
-              <p className="text-blue-100 text-sm mt-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-2xl font-bold">{deliverable.title}</h2>
+                {deliverable.category === 'custom-frustration' && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-900">
+                    Your Challenge
+                  </span>
+                )}
+              </div>
+              <p className={`text-sm mt-1 ${
+                deliverable.category === 'custom-frustration' ? 'text-amber-100' : 'text-blue-100'
+              }`}>
                 {deliverable.baselineHours}h → {deliverable.aiEnabledHours.toFixed(2)}h ({deliverable.frequency})
               </p>
             </div>
@@ -94,36 +107,8 @@ export default function DeliverableModal({
           </button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="sticky top-[104px] bg-white border-b border-gray-200 px-8 flex gap-2">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`px-6 py-3 font-semibold transition-all ${
-              activeTab === 'overview'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('voice-agent')}
-            className={`px-6 py-3 font-semibold transition-all flex items-center gap-2 ${
-              activeTab === 'voice-agent'
-                ? 'text-purple-600 border-b-2 border-purple-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Bot className="w-4 h-4" />
-            Voice Agent Setup
-          </button>
-        </div>
-
         {/* Content */}
         <div className="p-8 space-y-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <>
           {/* The Situation */}
           <div>
             <p className="text-sm font-semibold text-purple-600 mb-2 uppercase tracking-wide">The Situation:</p>
@@ -298,155 +283,53 @@ export default function DeliverableModal({
               </div>
             </div>
           )}
-            </>
-          )}
 
-          {/* Voice Agent Setup Tab */}
-          {activeTab === 'voice-agent' && (
-            <>
-              <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-6 mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                  <Bot className="w-7 h-7 text-purple-600" />
-                  AI Voice Agent Implementation Guide
-                </h2>
-                <p className="text-gray-700">
-                  This comprehensive guide provides everything needed to build an AI voice agent for this deliverable.
-                  Download the DOCX file to use as training material for your voice agent system.
+          {/* Frustration Resolution Analysis - Only for custom frustration deliverables */}
+          {deliverable.category === 'custom-frustration' && deliverable.frustrationResolutionAnalysis && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-6 border-l-4 border-amber-500 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-200 text-amber-900">
+                  Your Challenge
+                </span>
+                <h3 className="text-lg font-bold text-gray-900">🎯 How AI Voice Solves Your Specific Frustration</h3>
+              </div>
+              <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                {deliverable.frustrationResolutionAnalysis}
+              </div>
+              <div className="mt-4 bg-amber-100 rounded-lg p-4 border border-amber-300">
+                <p className="text-xs text-amber-900 font-semibold">
+                  💡 This analysis is custom-built based on your specific daily frustration. We understand this isn't a generic pain point—it's YOUR challenge, and AI voice assistance provides a targeted solution.
                 </p>
               </div>
-
-              {/* Section 1: Voice Agent Overview */}
-              {deliverable.voiceAgentOverview && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">1</span>
-                    Voice Agent Overview
-                  </h3>
-                  <div className="bg-white rounded-lg p-5 border-l-4 border-purple-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentOverview}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 2: Personality & Communication Style */}
-              {deliverable.voiceAgentPersonality && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">2</span>
-                    Personality & Communication Style
-                  </h3>
-                  <div className="bg-purple-50 rounded-lg p-5 border-l-4 border-purple-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentPersonality}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 3: Core Knowledge Base */}
-              {deliverable.voiceAgentKnowledgeBase && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">3</span>
-                    Core Knowledge Base
-                  </h3>
-                  <div className="bg-blue-50 rounded-lg p-5 border-l-4 border-blue-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentKnowledgeBase}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 4: System Prompt & Instructions */}
-              {deliverable.voiceAgentSystemPrompt && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">4</span>
-                    System Prompt & Instructions
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-5 border-l-4 border-gray-500">
-                    <p className="text-sm text-gray-600 italic mb-3">
-                      Copy this system prompt directly into your voice agent configuration:
-                    </p>
-                    <div className="bg-white rounded p-4 font-mono text-sm text-gray-800 leading-relaxed whitespace-pre-line border border-gray-300 overflow-x-auto">
-                      {deliverable.voiceAgentSystemPrompt}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 5: Sample Conversations */}
-              {deliverable.voiceAgentSampleConversations && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">5</span>
-                    Sample Conversations
-                  </h3>
-                  <div className="bg-green-50 rounded-lg p-5 border-l-4 border-green-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentSampleConversations}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 6: Training Dialogues */}
-              {deliverable.voiceAgentTrainingData && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">6</span>
-                    Training Dialogues
-                  </h3>
-                  <div className="bg-yellow-50 rounded-lg p-5 border-l-4 border-yellow-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentTrainingData}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Section 7: Integration Guide */}
-              {deliverable.voiceAgentIntegrationGuide && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 border-b-2 border-purple-200 pb-2">
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm">7</span>
-                    Integration & Technical Specifications
-                  </h3>
-                  <div className="bg-indigo-50 rounded-lg p-5 border-l-4 border-indigo-500">
-                    <div className="text-gray-800 leading-relaxed whitespace-pre-line">
-                      {deliverable.voiceAgentIntegrationGuide}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Download DOCX Button */}
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border-2 border-purple-300">
-                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
-                  <Download className="w-5 h-5 text-purple-600" />
-                  Download Complete Implementation Guide
-                </h4>
-                <p className="text-sm text-gray-700 mb-4">
-                  Get the complete guide as a professionally formatted DOCX file, ready to use as training material for your AI voice agent system.
-                </p>
-                <button
-                  onClick={handleDownloadGuide}
-                  disabled={isDownloading}
-                  className={`px-6 py-3 font-semibold rounded-lg transition-all flex items-center gap-2 ${
-                    isDownloading
-                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl'
-                  }`}
-                >
-                  <Download className="w-5 h-5" />
-                  {isDownloading ? 'Generating...' : 'Download DOCX Guide'}
-                </button>
-              </div>
-            </>
+            </div>
           )}
+
+          {/* Download AI Voice Agent Guide */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border-2 border-purple-300">
+            <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+              <Download className="w-5 h-5 text-purple-600" />
+              Download AI Voice Agent Implementation Guide
+            </h4>
+            <p className="text-sm text-gray-700 mb-4">
+              Get a comprehensive, professionally formatted DOCX guide for implementing an AI voice agent to handle this deliverable.
+              The guide includes personality setup, knowledge base, system prompts, sample conversations, training data, and integration specifications.
+            </p>
+            <p className="text-xs text-gray-600 mb-4 italic">
+              Note: This will take 2-5 minutes to generate as we create custom voice agent content for your specific deliverable.
+            </p>
+            <button
+              onClick={handleDownloadGuide}
+              disabled={isDownloading}
+              className={`px-6 py-3 font-semibold rounded-lg transition-all flex items-center gap-2 ${
+                isDownloading
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 shadow-lg hover:shadow-xl'
+              }`}
+            >
+              <Download className="w-5 h-5" />
+              {isDownloading ? 'Generating Voice Agent Guide...' : 'Download Voice Agent Guide (DOCX)'}
+            </button>
+          </div>
         </div>
 
         {/* Footer with Navigation */}
@@ -458,7 +341,7 @@ export default function DeliverableModal({
             Close
           </button>
           <p className="text-sm text-gray-600">
-            Deliverable {index + 1} of 5
+            Deliverable {index + 1} of {totalDeliverables || 5}
           </p>
         </div>
       </div>

@@ -65,7 +65,8 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
       'http://localhost:8000',
-      'http://localhost:3000'
+      'http://localhost:3000',
+      'http://localhost:5173'
     ];
 
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -78,7 +79,7 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
 };
 
@@ -238,13 +239,12 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Static Files (Optional)
 // ===================================
 
-if (NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files in both development and production
+app.use(express.static(path.join(__dirname, '../public')));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  });
-}
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // ===================================
 // Error Handling
@@ -323,9 +323,13 @@ let server;
 
 async function startServer() {
   try {
-    // Initialize database
-    await db.initialize();
-    logInfo('Database initialized');
+    // Initialize database (non-blocking - server can start without DB for AIVA routes)
+    db.initialize().then(() => {
+      logInfo('Database initialized');
+    }).catch((error) => {
+      logError('Database initialization failed (server will continue without DB):', error.message);
+      logInfo('Note: AIVA ROI routes do not require database connection');
+    });
 
     // Initialize Redis (optional)
     await initializeRedis();
