@@ -312,13 +312,18 @@ if (fs.existsSync(finalPath)) {
 }
 
 // Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
-// express.static will automatically serve files from finalPath
-app.use(express.static(finalPath, {
-  maxAge: '1y',
-  etag: true,
-  index: false, // Don't serve index.html automatically - we'll handle it manually
-  fallthrough: true // Allow fallthrough to catch-all for missing files
-}));
+// Only set up express.static if directory exists, otherwise handle gracefully
+if (fs.existsSync(finalPath)) {
+  app.use(express.static(finalPath, {
+    maxAge: '1y',
+    etag: true,
+    index: false,
+    fallthrough: true // Allow fallthrough to catch-all for missing files
+  }));
+} else {
+  logError(`WARNING: Static file directory does not exist: ${finalPath}`);
+  logError(`Static files will not be served. Check build process.`);
+}
 
 // Serve index.html for non-API routes (SPA routing)
 // This only catches routes that don't match static files
@@ -381,7 +386,7 @@ app.use((req, res) => {
   }
   
   // This shouldn't happen for frontend routes, but just in case
-  const indexPath = path.join(frontendPath, 'index.html');
+  const indexPath = path.join(finalPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
@@ -390,7 +395,7 @@ app.use((req, res) => {
         <body>
           <h1>404 - Frontend not found</h1>
           <p>Please ensure the frontend is built.</p>
-          <p>Path: ${frontendPath}</p>
+          <p>Path: ${finalPath}</p>
         </body>
       </html>
     `);

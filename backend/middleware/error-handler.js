@@ -3,6 +3,17 @@
 const { logError } = require('../utils/logger');
 
 function errorHandler(err, req, res, next) {
+  // Don't return JSON for static file requests - they should be handled earlier
+  // Check if this is a static file request (has file extension and not API route)
+  if (!req.path.startsWith('/api') && req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    logError(`Static file error (should not reach here): ${req.path} - ${err.message}`);
+    // Return proper error for static files, not JSON
+    if (!res.headersSent) {
+      return res.status(err.statusCode || 500).type('text/plain').send(`Error: ${err.message}`);
+    }
+    return;
+  }
+  
   // Log error
   logError('Request error:', {
     error: err.message,
