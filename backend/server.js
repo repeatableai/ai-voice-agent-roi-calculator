@@ -247,40 +247,31 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Static Files - Serve AIVA Frontend
 // ===================================
 
-// Path resolution for Render compatibility
-// CRITICAL: In Render, server starts from backend/ directory
-// So process.cwd() = /opt/render/project/src/backend (NOT project root!)
-// We need to use __dirname which is /opt/render/project/src/backend
-// Then go up one level: ../AIVA/dist = /opt/render/project/src/AIVA/dist
+// Path resolution - Works for Fly.io, Render, and local development
+// Fly.io Docker: WORKDIR /app/backend, so __dirname = /app/backend
+// Render: startCommand "cd backend && npm start", so __dirname = /opt/render/project/src/backend
+// Local: depends on how you start, but __dirname = <project>/backend
 
 let finalPath;
 let frontendPath;
 let fallbackPath;
 
 try {
-  // In Render: startCommand is "cd backend && npm start"
-  // So process.cwd() = /opt/render/project/src/backend
-  // __dirname = /opt/render/project/src/backend
-  // We need to go up one level to get to project root
-  
-  // Primary path: from __dirname (backend/) go up to project root, then to AIVA/dist
+  // Primary path: from backend/ directory, go up one level to project root, then to AIVA/dist
   const primaryPath = path.join(__dirname, '../AIVA/dist');
   
-  // Alternative: try process.cwd() but it might be backend/ directory
-  const altPath1 = path.join(process.cwd(), 'AIVA', 'dist');
-  
-  // If process.cwd() is backend/, try going up one level
-  const altPath2 = path.join(process.cwd(), '../AIVA/dist');
-  
-  // Try all paths in order
+  // Try multiple paths to handle different deployment scenarios
   const pathsToTry = [
-    primaryPath,      // __dirname/../AIVA/dist (most reliable)
-    altPath1,        // process.cwd()/AIVA/dist
-    altPath2,        // process.cwd()/../AIVA/dist
-    path.join(__dirname, '../../AIVA/dist'), // Backup
+    primaryPath,                                    // __dirname/../AIVA/dist (most reliable)
+    path.join(process.cwd(), '../AIVA/dist'),      // process.cwd()/../AIVA/dist
+    path.join(__dirname, '../../AIVA/dist'),       // __dirname/../../AIVA/dist
+    path.join(process.cwd(), 'AIVA/dist'),         // process.cwd()/AIVA/dist
   ];
   
-  logInfo(`[PATH] Trying paths in order:`);
+  logInfo(`[PATH] Resolving frontend path...`);
+  logInfo(`[PATH] __dirname: ${__dirname}`);
+  logInfo(`[PATH] process.cwd(): ${process.cwd()}`);
+  
   for (const testPath of pathsToTry) {
     logInfo(`[PATH] Checking: ${testPath} - exists: ${fs.existsSync(testPath)}`);
     if (fs.existsSync(testPath)) {
@@ -295,10 +286,11 @@ try {
     pathsToTry.forEach(p => logError(`[PATH]   - ${p}`));
     // Use primary path as fallback (will show error when trying to serve)
     finalPath = primaryPath;
+    logError(`[PATH] Using fallback: ${finalPath}`);
   }
   
   frontendPath = primaryPath;
-  fallbackPath = altPath1;
+  fallbackPath = pathsToTry[1] || primaryPath;
   
 } catch (err) {
   logError(`CRITICAL: Error in path resolution: ${err.message}`);
@@ -306,7 +298,7 @@ try {
   // Set a default path to prevent server crash
   finalPath = path.join(__dirname, '../AIVA/dist');
   frontendPath = finalPath;
-  fallbackPath = path.join(process.cwd(), 'AIVA', 'dist');
+  fallbackPath = finalPath;
 }
 
 // Comprehensive logging for debugging
