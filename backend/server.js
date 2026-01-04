@@ -311,87 +311,164 @@ if (fs.existsSync(finalPath)) {
   }
 }
 
-// Serve static files (CSS, JS, images, etc.) - CUSTOM HANDLER to avoid express.static errors
-// This completely bypasses express.static to have full control over error handling
+// Serve static files (CSS, JS, images, etc.) - CUSTOM HANDLER with comprehensive error handling
 app.use((req, res, next) => {
-  // Skip API routes
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  
-  // Only handle file requests (has extension)
-  if (!req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    return next();
-  }
-  
-  // Check if directory exists
-  if (!fs.existsSync(finalPath)) {
-    logError(`Static file requested but directory doesn't exist: ${finalPath}`);
-    return res.status(404).type('text/plain').send(`Static files directory not found`);
-  }
-  
-  // Build file path - remove leading slash and join with finalPath
-  const filePath = path.join(finalPath, req.path.replace(/^\//, ''));
-  
-  // Security check - ensure file is within finalPath directory
-  const resolvedPath = path.resolve(filePath);
-  const resolvedFinalPath = path.resolve(finalPath);
-  if (!resolvedPath.startsWith(resolvedFinalPath)) {
-    logError(`Security: Attempted path traversal: ${req.path}`);
-    return res.status(403).type('text/plain').send('Forbidden');
-  }
-  
-  // Check if file exists
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
-  }
-  
-  // Check if it's a file (not directory)
-  const stats = fs.statSync(filePath);
-  if (!stats.isFile()) {
-    return res.status(404).type('text/plain').send(`Not a file: ${req.path}`);
-  }
-  
-  // Determine content type based on extension
-  const ext = path.extname(filePath).toLowerCase();
-  const contentTypes = {
-    '.css': 'text/css',
-    '.js': 'application/javascript',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon',
-    '.html': 'text/html',
-    '.txt': 'text/plain',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-    '.ttf': 'font/ttf',
-    '.eot': 'application/vnd.ms-fontobject'
-  };
-  const contentType = contentTypes[ext] || 'application/octet-stream';
-  
-  // Set headers
-  res.setHeader('Content-Type', contentType);
-  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
-  
-  // Read and send file
   try {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    
+    // Only handle file requests (has extension)
+    if (!req.path.match(/\.[a-zA-Z0-9]+$/)) {
+      return next();
+    }
+    
+    logInfo(`[STATIC] Request for: ${req.path}`);
+    logInfo(`[STATIC] finalPath: ${finalPath}`);
+    logInfo(`[STATIC] finalPath exists: ${fs.existsSync(finalPath)}`);
+    
+    // Check if directory exists
+    if (!fs.existsSync(finalPath)) {
+      logError(`[STATIC] Directory doesn't exist: ${finalPath}`);
+      logError(`[STATIC] process.cwd(): ${process.cwd()}`);
+      logError(`[STATIC] __dirname: ${__dirname}`);
+      if (!res.headersSent) {
+        return res.status(404).type('text/plain').send(`Static files directory not found: ${finalPath}`);
+      }
+      return;
+    }
+    
+    // Build file path - handle /assets/index-xxx.css format
+    let relativePath = req.path.replace(/^\//, ''); // Remove leading slash
+    const filePath = path.join(finalPath, relativePath);
+    
+    logInfo(`[STATIC] Looking for file: ${filePath}`);
+    logInfo(`[STATIC] File exists: ${fs.existsSync(filePath)}`);
+    
+    // Security check - ensure file is within finalPath directory
+    try {
+      const resolvedPath = path.resolve(filePath);
+      const resolvedFinalPath = path.resolve(finalPath);
+      if (!resolvedPath.startsWith(resolvedFinalPath)) {
+        logError(`[STATIC] Security: Path traversal attempt: ${req.path} -> ${resolvedPath}`);
+        if (!res.headersSent) {
+          return res.status(403).type('text/plain').send('Forbidden');
+        }
+        return;
+      }
+    } catch (err) {
+      logError(`[STATIC] Error in security check: ${err.message}`);
+      if (!res.headersSent) {
+        return res.status(500).type('text/plain').send(`Security check failed: ${err.message}`);
+      }
+      return;
+    }
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      logError(`[STATIC] File not found: ${filePath}`);
+      logError(`[STATIC] Requested path: ${req.path}`);
+      logError(`[STATIC] Relative path: ${relativePath}`);
+      // List files in directory to help debug
+      try {
+        const dirFiles = fs.readdirSync(finalPath);
+        logError(`[STATIC] Files in directory: ${dirFiles.join(', ')}`);
+        // Check assets subdirectory
+        const assetsPath = path.join(finalPath, 'assets');
+        if (fs.existsSync(assetsPath)) {
+          const assetFiles = fs.readdirSync(assetsPath);
+          logError(`[STATIC] Files in assets/: ${assetFiles.join(', ')}`);
+        }
+      } catch (e) {
+        logError(`[STATIC] Error listing directory: ${e.message}`);
+      }
+      if (!res.headersSent) {
+        return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
+      }
+      return;
+    }
+    
+    // Check if it's a file (not directory)
+    let stats;
+    try {
+      stats = fs.statSync(filePath);
+    } catch (err) {
+      logError(`[STATIC] Error statting file: ${err.message}`);
+      if (!res.headersSent) {
+        return res.status(500).type('text/plain').send(`Error accessing file: ${err.message}`);
+      }
+      return;
+    }
+    
+    if (!stats.isFile()) {
+      logError(`[STATIC] Not a file: ${filePath}`);
+      if (!res.headersSent) {
+        return res.status(404).type('text/plain').send(`Not a file: ${req.path}`);
+      }
+      return;
+    }
+    
+    // Determine content type based on extension
+    const ext = path.extname(filePath).toLowerCase();
+    const contentTypes = {
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.html': 'text/html',
+      '.txt': 'text/plain',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.eot': 'application/vnd.ms-fontobject'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+    
+    logInfo(`[STATIC] Serving file: ${filePath} with content-type: ${contentType}`);
+    
+    // Set headers BEFORE reading file
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    }
+    
+    // Read and send file
     const fileStream = fs.createReadStream(filePath);
+    
     fileStream.on('error', (err) => {
-      logError(`Error reading file ${filePath}: ${err.message}`);
+      logError(`[STATIC] Stream error for ${filePath}: ${err.message}`);
+      logError(`[STATIC] Stream error stack: ${err.stack}`);
       if (!res.headersSent) {
         res.status(500).type('text/plain').send(`Error reading file: ${err.message}`);
+      } else {
+        // Headers already sent, can't send error - just log it
+        logError(`[STATIC] Headers already sent, cannot send error response`);
       }
     });
+    
+    fileStream.on('open', () => {
+      logInfo(`[STATIC] File stream opened successfully for: ${filePath}`);
+    });
+    
     fileStream.pipe(res);
+    
+    res.on('error', (err) => {
+      logError(`[STATIC] Response error: ${err.message}`);
+    });
+    
   } catch (err) {
-    logError(`Error serving file ${filePath}: ${err.message}`);
+    logError(`[STATIC] Unexpected error in static handler: ${err.message}`);
+    logError(`[STATIC] Error stack: ${err.stack}`);
     if (!res.headersSent) {
-      res.status(500).type('text/plain').send(`Error serving file: ${err.message}`);
+      res.status(500).type('text/plain').send(`Internal error: ${err.message}`);
     }
+    // Don't call next() - we've handled the error
   }
 });
 
@@ -472,8 +549,26 @@ app.use((req, res) => {
   }
 });
 
-// Global error handler
-app.use(errorHandler);
+// Global error handler - MUST be last
+// Add check to prevent handling static file errors (they should be handled above)
+app.use((err, req, res, next) => {
+  // If this is a static file request, it should have been handled already
+  // If we're here, something went wrong - log it but don't return JSON
+  if (!req.path.startsWith('/api') && req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    logError(`[ERROR HANDLER] Static file error reached error handler - this should not happen!`);
+    logError(`[ERROR HANDLER] Path: ${req.path}`);
+    logError(`[ERROR HANDLER] Error: ${err.message}`);
+    logError(`[ERROR HANDLER] Stack: ${err.stack}`);
+    if (!res.headersSent) {
+      const contentType = req.path.endsWith('.css') ? 'text/css' : 
+                         req.path.endsWith('.js') ? 'application/javascript' : 'text/plain';
+      return res.status(err.statusCode || 500).type(contentType).send(`/* Error: ${err.message} */`);
+    }
+    return;
+  }
+  // For non-static file errors, use the normal error handler
+  errorHandler(err, req, res, next);
+});
 
 // ===================================
 // Graceful Shutdown
