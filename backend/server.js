@@ -247,43 +247,50 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Static Files - Serve AIVA Frontend
 // ===================================
 
-// Path resolution for Render compatibility
-// Use process.cwd() for Render compatibility
-// In Render: process.cwd() = /opt/render/project/src (project root)
-// In local: process.cwd() = project root
-const projectRoot = process.cwd();
-const frontendPath = path.join(projectRoot, 'AIVA', 'dist');
-
-// Fallback to __dirname for local development if needed
-const fallbackPath = path.join(__dirname, '../AIVA/dist');
-
-// Determine final path - use process.cwd() path if it exists, otherwise fallback
+// Path resolution for Render compatibility - wrapped in try-catch to prevent startup errors
 let finalPath;
-if (fs.existsSync(frontendPath)) {
-  finalPath = frontendPath;
-} else if (fs.existsSync(fallbackPath)) {
-  finalPath = fallbackPath;
-  logInfo(`Using fallback path: ${fallbackPath}`);
-} else {
-  // Try alternative paths
-  const alternatives = [
-    path.join(process.cwd(), 'AIVA', 'dist'),
-    path.join(__dirname, '../AIVA/dist'),
-    path.join(__dirname, '../../AIVA/dist'),
-  ];
-  
-  for (const altPath of alternatives) {
-    if (fs.existsSync(altPath)) {
-      finalPath = altPath;
-      logInfo(`Using alternative path: ${altPath}`);
-      break;
+try {
+  // Use process.cwd() for Render compatibility
+  // In Render: process.cwd() = /opt/render/project/src (project root)
+  // In local: process.cwd() = project root
+  const projectRoot = process.cwd();
+  const frontendPath = path.join(projectRoot, 'AIVA', 'dist');
+
+  // Fallback to __dirname for local development if needed
+  const fallbackPath = path.join(__dirname, '../AIVA/dist');
+
+  // Determine final path - use process.cwd() path if it exists, otherwise fallback
+  if (fs.existsSync(frontendPath)) {
+    finalPath = frontendPath;
+  } else if (fs.existsSync(fallbackPath)) {
+    finalPath = fallbackPath;
+    logInfo(`Using fallback path: ${fallbackPath}`);
+  } else {
+    // Try alternative paths
+    const alternatives = [
+      path.join(process.cwd(), 'AIVA', 'dist'),
+      path.join(__dirname, '../AIVA/dist'),
+      path.join(__dirname, '../../AIVA/dist'),
+    ];
+    
+    for (const altPath of alternatives) {
+      if (fs.existsSync(altPath)) {
+        finalPath = altPath;
+        logInfo(`Using alternative path: ${altPath}`);
+        break;
+      }
+    }
+    
+    // If still not found, use frontendPath as default (will error later with better logging)
+    if (!finalPath) {
+      finalPath = frontendPath;
     }
   }
-  
-  // If still not found, use frontendPath as default (will error later with better logging)
-  if (!finalPath) {
-    finalPath = frontendPath;
-  }
+} catch (err) {
+  logError(`CRITICAL: Error in path resolution: ${err.message}`);
+  logError(`CRITICAL: Stack: ${err.stack}`);
+  // Set a default path to prevent server crash
+  finalPath = path.join(__dirname, '../AIVA/dist');
 }
 
 // Comprehensive logging for debugging
