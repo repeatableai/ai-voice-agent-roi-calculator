@@ -23,9 +23,8 @@ services:
         value: https://aiva-frontend.onrender.com  # Update after frontend is deployed
 
   # Frontend Service
-  - type: web
+  - type: static
     name: aiva-frontend
-    env: static
     buildCommand: cd AIVA && npm install && npm run build
     staticPublishPath: ./AIVA/dist
     envVars:
