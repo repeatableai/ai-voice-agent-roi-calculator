@@ -26,7 +26,8 @@ export default function DeliverableModal({
   const handleDownloadGuide = async () => {
     setIsDownloading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+      // Use relative URL when served by backend (same origin), or VITE_API_URL if set
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiUrl}/api/aiva/download-voice-agent-guide`, {
         method: 'POST',
         headers: {

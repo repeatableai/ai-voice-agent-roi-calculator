@@ -206,7 +206,8 @@ export default function VoiceROICalculator() {
       console.log(`🔍 Researching deliverables dynamically for: "${jobTitle}" in "${industry}"`);
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+        // Use relative URL when served by backend (same origin), or VITE_API_URL if set
+      const apiUrl = import.meta.env.VITE_API_URL || '';
         const response = await fetch(`${apiUrl}/api/aiva/research-role-deliverables`, {
           method: 'POST',
           headers: {
@@ -358,7 +359,8 @@ export default function VoiceROICalculator() {
 
   const generateAIContent = async (jobTitle, industry, companyName, companyContext, deliverables, biggestFrustration, hourlyRate) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+      // Use relative URL when served by backend (same origin), or VITE_API_URL if set
+      const apiUrl = import.meta.env.VITE_API_URL || '';
 
       // Log request data for debugging
       console.log('🚀 API Request:', {
