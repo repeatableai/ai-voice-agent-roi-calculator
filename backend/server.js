@@ -243,14 +243,20 @@ app.use('/api/aiva', aivaROIRoutes);
 app.use('/api/aiva', aivaDOCXRoutes);
 
 // ===================================
-// Static Files (Optional)
+// Static Files - Serve AIVA Frontend
 // ===================================
 
-// Serve static files in both development and production
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve AIVA frontend static files (built React app)
+const frontendPath = path.join(__dirname, '../AIVA/dist');
+app.use(express.static(frontendPath));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+// Serve frontend for all non-API routes
+app.get('*', (req, res, next) => {
+  // Don't serve frontend for API routes
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // ===================================
