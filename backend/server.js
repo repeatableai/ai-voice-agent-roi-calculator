@@ -247,26 +247,77 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Static Files - Serve AIVA Frontend
 // ===================================
 
-// Serve AIVA frontend static files (built React app)
-const frontendPath = path.join(__dirname, '../AIVA/dist');
+// Path resolution for Render compatibility
+// Use process.cwd() for Render compatibility
+// In Render: process.cwd() = /opt/render/project/src (project root)
+// In local: process.cwd() = project root
+const projectRoot = process.cwd();
+const frontendPath = path.join(projectRoot, 'AIVA', 'dist');
 
-// Log frontend path for debugging
-logInfo(`Frontend path: ${frontendPath}`);
+// Fallback to __dirname for local development if needed
+const fallbackPath = path.join(__dirname, '../AIVA/dist');
+
+// Determine final path - use process.cwd() path if it exists, otherwise fallback
+let finalPath;
 if (fs.existsSync(frontendPath)) {
-  logInfo(`Frontend directory exists`);
-  const files = fs.readdirSync(frontendPath);
-  logInfo(`Frontend files: ${files.join(', ')}`);
+  finalPath = frontendPath;
+} else if (fs.existsSync(fallbackPath)) {
+  finalPath = fallbackPath;
+  logInfo(`Using fallback path: ${fallbackPath}`);
 } else {
-  logError(`Frontend directory does not exist at: ${frontendPath}`);
+  // Try alternative paths
+  const alternatives = [
+    path.join(process.cwd(), 'AIVA', 'dist'),
+    path.join(__dirname, '../AIVA/dist'),
+    path.join(__dirname, '../../AIVA/dist'),
+  ];
+  
+  for (const altPath of alternatives) {
+    if (fs.existsSync(altPath)) {
+      finalPath = altPath;
+      logInfo(`Using alternative path: ${altPath}`);
+      break;
+    }
+  }
+  
+  // If still not found, use frontendPath as default (will error later with better logging)
+  if (!finalPath) {
+    finalPath = frontendPath;
+  }
+}
+
+// Comprehensive logging for debugging
+logInfo(`=== Frontend Path Resolution ===`);
+logInfo(`process.cwd(): ${process.cwd()}`);
+logInfo(`__dirname: ${__dirname}`);
+logInfo(`frontendPath (cwd): ${frontendPath}`);
+logInfo(`fallbackPath (__dirname): ${fallbackPath}`);
+logInfo(`finalPath: ${finalPath}`);
+logInfo(`finalPath exists: ${fs.existsSync(finalPath)}`);
+
+if (fs.existsSync(finalPath)) {
+  const files = fs.readdirSync(finalPath);
+  logInfo(`Frontend directory exists with ${files.length} files`);
+  logInfo(`Files: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
+} else {
+  logError(`Frontend directory does NOT exist at: ${finalPath}`);
+  logError(`Also checked: ${fallbackPath}`);
+  logError(`Directory listing of project root:`);
+  try {
+    const rootFiles = fs.readdirSync(process.cwd());
+    logError(`Root files: ${rootFiles.join(', ')}`);
+  } catch (e) {
+    logError(`Cannot read project root: ${e.message}`);
+  }
 }
 
 // Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
-// express.static will automatically serve files from frontendPath
-app.use(express.static(frontendPath, {
+// express.static will automatically serve files from finalPath
+app.use(express.static(finalPath, {
   maxAge: '1y',
   etag: true,
   index: false, // Don't serve index.html automatically - we'll handle it manually
-  fallthrough: false // Don't fall through if file not found - return 404
+  fallthrough: true // Allow fallthrough to catch-all for missing files
 }));
 
 // Serve index.html for non-API routes (SPA routing)
@@ -277,30 +328,33 @@ app.get('*', (req, res, next) => {
     return next();
   }
   
-  // Skip requests for files with extensions - these should be handled by express.static
-  // If we get here, express.static didn't find the file (fallthrough: false means it returns 404)
-  // But we still want to handle SPA routes, so check if it's a file request
+  // Handle missing static files - return proper 404 with correct content type
   if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    // This is a file request that wasn't found - let express.static handle the 404
-    return next();
+    // This is a file request that wasn't found by express.static
+    // Return proper 404, not JSON
+    return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
   }
   
-  // Serve index.html for all other routes (SPA routing)
-  const indexPath = path.join(frontendPath, 'index.html');
+  // Serve index.html for SPA routes
+  const indexPath = path.join(finalPath, 'index.html');
   if (!fs.existsSync(indexPath)) {
     logError(`index.html not found at: ${indexPath}`);
+    logError(`Tried paths: ${finalPath}, ${fallbackPath}`);
+    logError(`Current working directory: ${process.cwd()}`);
+    logError(`__dirname: ${__dirname}`);
     return res.status(404).type('text/html').send(`
       <html><body>
         <h1>404 - Frontend not found</h1>
         <p>Path: ${indexPath}</p>
-        <p>Frontend path: ${frontendPath}</p>
+        <p>Frontend path: ${finalPath}</p>
+        <p>cwd: ${process.cwd()}</p>
+        <p>__dirname: ${__dirname}</p>
       </body></html>
     `);
   }
   
   res.sendFile(indexPath, (err) => {
     if (err) {
-      // Don't pass to error handler - return HTML error instead
       logError(`Error serving index.html: ${err.message}`);
       return res.status(500).type('text/html').send(`
         <html><body>
