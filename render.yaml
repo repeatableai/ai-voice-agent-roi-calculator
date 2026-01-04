@@ -1,0 +1,34 @@
+services:
+  # Backend API Service
+  - type: web
+    name: aiva-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: OPENAI_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: https://aiva-frontend.onrender.com  # Update after frontend is deployed
+
+  # Frontend Service
+  - type: web
+    name: aiva-frontend
+    env: static
+    buildCommand: cd AIVA && npm install && npm run build
+    staticPublishPath: ./AIVA/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://aiva-backend.onrender.com  # Update with your backend URL
+

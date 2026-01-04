@@ -63,11 +63,18 @@ app.use(helmet({
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    // Support CORS_ORIGIN for single origin or ALLOWED_ORIGINS for multiple
+    const corsOrigin = process.env.CORS_ORIGIN;
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
       'http://localhost:8000',
       'http://localhost:3000',
       'http://localhost:5173'
     ];
+
+    // If CORS_ORIGIN is set, add it to allowed origins
+    if (corsOrigin && allowedOrigins.indexOf(corsOrigin) === -1) {
+      allowedOrigins.push(corsOrigin);
+    }
 
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
