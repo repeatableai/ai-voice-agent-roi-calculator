@@ -396,22 +396,23 @@ app.use((req, res, next) => {
       return;
     }
     
-    // Check if it's a file (not directory)
+    // Check if it's a file (not directory) - wrap in try-catch
     let stats;
     try {
       stats = fs.statSync(filePath);
+      if (!stats.isFile()) {
+        logError(`[STATIC] Not a file: ${filePath}`);
+        if (!res.headersSent) {
+          return res.status(404).type('text/plain').send(`Not a file: ${req.path}`);
+        }
+        return;
+      }
     } catch (err) {
-      logError(`[STATIC] Error statting file: ${err.message}`);
+      logError(`[STATIC] Error accessing file ${filePath}: ${err.message}`);
+      logError(`[STATIC] Error code: ${err.code}`);
+      logError(`[STATIC] Error stack: ${err.stack}`);
       if (!res.headersSent) {
         return res.status(500).type('text/plain').send(`Error accessing file: ${err.message}`);
-      }
-      return;
-    }
-    
-    if (!stats.isFile()) {
-      logError(`[STATIC] Not a file: ${filePath}`);
-      if (!res.headersSent) {
-        return res.status(404).type('text/plain').send(`Not a file: ${req.path}`);
       }
       return;
     }
@@ -445,29 +446,47 @@ app.use((req, res, next) => {
       res.setHeader('Cache-Control', 'public, max-age=31536000');
     }
     
-    // Read and send file
-    const fileStream = fs.createReadStream(filePath);
-    
-    fileStream.on('error', (err) => {
-      logError(`[STATIC] Stream error for ${filePath}: ${err.message}`);
-      logError(`[STATIC] Stream error stack: ${err.stack}`);
+    // Read and send file - wrap in try-catch for extra safety
+    try {
+      const fileStream = fs.createReadStream(filePath);
+      
+      fileStream.on('error', (err) => {
+        logError(`[STATIC] Stream error for ${filePath}: ${err.message}`);
+        logError(`[STATIC] Stream error code: ${err.code}`);
+        logError(`[STATIC] Stream error stack: ${err.stack}`);
+        if (!res.headersSent) {
+          res.status(500).type('text/plain').send(`Error reading file: ${err.message}`);
+        } else {
+          // Headers already sent, can't send error - just log it
+          logError(`[STATIC] Headers already sent, cannot send error response`);
+        }
+      });
+      
+      fileStream.on('open', () => {
+        logInfo(`[STATIC] File stream opened successfully for: ${filePath}`);
+      });
+      
+      res.on('error', (err) => {
+        logError(`[STATIC] Response error: ${err.message}`);
+        fileStream.destroy(); // Close the stream if response errors
+      });
+      
+      res.on('close', () => {
+        if (!res.writableEnded) {
+          logInfo(`[STATIC] Response closed before stream ended`);
+          fileStream.destroy(); // Clean up stream
+        }
+      });
+      
+      fileStream.pipe(res);
+      
+    } catch (err) {
+      logError(`[STATIC] Error creating file stream: ${err.message}`);
+      logError(`[STATIC] Error stack: ${err.stack}`);
       if (!res.headersSent) {
-        res.status(500).type('text/plain').send(`Error reading file: ${err.message}`);
-      } else {
-        // Headers already sent, can't send error - just log it
-        logError(`[STATIC] Headers already sent, cannot send error response`);
+        res.status(500).type('text/plain').send(`Error serving file: ${err.message}`);
       }
-    });
-    
-    fileStream.on('open', () => {
-      logInfo(`[STATIC] File stream opened successfully for: ${filePath}`);
-    });
-    
-    fileStream.pipe(res);
-    
-    res.on('error', (err) => {
-      logError(`[STATIC] Response error: ${err.message}`);
-    });
+    }
     
   } catch (err) {
     logError(`[STATIC] Unexpected error in static handler: ${err.message}`);
