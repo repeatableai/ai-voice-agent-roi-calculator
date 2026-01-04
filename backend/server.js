@@ -249,15 +249,18 @@ app.use('/api/aiva', aivaDOCXRoutes);
 
 // Path resolution for Render compatibility - wrapped in try-catch to prevent startup errors
 let finalPath;
+let frontendPath;
+let fallbackPath;
+
 try {
   // Use process.cwd() for Render compatibility
   // In Render: process.cwd() = /opt/render/project/src (project root)
   // In local: process.cwd() = project root
   const projectRoot = process.cwd();
-  const frontendPath = path.join(projectRoot, 'AIVA', 'dist');
+  frontendPath = path.join(projectRoot, 'AIVA', 'dist');
 
   // Fallback to __dirname for local development if needed
-  const fallbackPath = path.join(__dirname, '../AIVA/dist');
+  fallbackPath = path.join(__dirname, '../AIVA/dist');
 
   // Determine final path - use process.cwd() path if it exists, otherwise fallback
   if (fs.existsSync(frontendPath)) {
@@ -291,6 +294,8 @@ try {
   logError(`CRITICAL: Stack: ${err.stack}`);
   // Set a default path to prevent server crash
   finalPath = path.join(__dirname, '../AIVA/dist');
+  frontendPath = path.join(process.cwd(), 'AIVA', 'dist');
+  fallbackPath = path.join(__dirname, '../AIVA/dist');
 }
 
 // Comprehensive logging for debugging
