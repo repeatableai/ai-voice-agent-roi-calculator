@@ -3,13 +3,30 @@
 const { logError } = require('../utils/logger');
 
 function errorHandler(err, req, res, next) {
-  // Don't return JSON for static file requests - they should be handled earlier
+  // CRITICAL: Never return JSON for static file requests
   // Check if this is a static file request (has file extension and not API route)
   if (!req.path.startsWith('/api') && req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    logError(`Static file error (should not reach here): ${req.path} - ${err.message}`);
+    logError(`Static file error reached error handler (should not happen): ${req.path} - ${err.message}`);
     // Return proper error for static files, not JSON
     if (!res.headersSent) {
-      return res.status(err.statusCode || 500).type('text/plain').send(`Error: ${err.message}`);
+      const statusCode = err.statusCode || err.status || 500;
+      // Determine content type based on file extension
+      let contentType = 'text/plain';
+      if (req.path.endsWith('.css')) {
+        contentType = 'text/css';
+      } else if (req.path.endsWith('.js')) {
+        contentType = 'application/javascript';
+      }
+      return res.status(statusCode).type(contentType).send(`Error loading ${req.path}: ${err.message}`);
+    }
+    return;
+  }
+  
+  // Also check for common static file paths
+  if (!req.path.startsWith('/api') && (req.path.startsWith('/assets/') || req.path.startsWith('/static/'))) {
+    logError(`Static asset error reached error handler: ${req.path} - ${err.message}`);
+    if (!res.headersSent) {
+      return res.status(err.statusCode || 404).type('text/plain').send(`Asset not found: ${req.path}`);
     }
     return;
   }

@@ -312,18 +312,53 @@ if (fs.existsSync(finalPath)) {
 }
 
 // Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
-// Only set up express.static if directory exists, otherwise handle gracefully
-if (fs.existsSync(finalPath)) {
-  app.use(express.static(finalPath, {
+// Wrap express.static in error-handling middleware to prevent JSON responses
+app.use((req, res, next) => {
+  // Skip API routes
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  
+  // Only handle static files if directory exists
+  if (!fs.existsSync(finalPath)) {
+    // If it's a file request and directory doesn't exist, return proper 404
+    if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+      return res.status(404).type('text/plain').send(`Static file directory not found`);
+    }
+    // Otherwise continue to catch-all route
+    return next();
+  }
+  
+  // Set up express.static with error handling
+  const staticMiddleware = express.static(finalPath, {
     maxAge: '1y',
     etag: true,
     index: false,
-    fallthrough: true // Allow fallthrough to catch-all for missing files
-  }));
-} else {
-  logError(`WARNING: Static file directory does not exist: ${finalPath}`);
-  logError(`Static files will not be served. Check build process.`);
-}
+    fallthrough: true
+  });
+  
+  // Call static middleware with error handling
+  staticMiddleware(req, res, (err) => {
+    if (err) {
+      // Error occurred - handle it here, don't let it reach error handler
+      logError(`Static file error for ${req.path}: ${err.message}`);
+      if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+        // It's a file request - return proper 404
+        return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
+      }
+      // Not a file request, continue to next middleware
+      return next();
+    }
+    
+    // If response was sent, don't continue
+    if (res.headersSent) {
+      return;
+    }
+    
+    // If no error and response not sent, continue to next middleware
+    next();
+  });
+});
 
 // Serve index.html for non-API routes (SPA routing)
 // This only catches routes that don't match static files
