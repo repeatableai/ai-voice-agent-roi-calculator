@@ -47,12 +47,36 @@ router.post('/generate-deliverable-content', async (req, res) => {
       });
     }
 
+    // Ensure deliverables have required properties with defaults
+    const normalizedDeliverables = deliverables.map(d => ({
+      ...d,
+      baselineHours: d.baselineHours || 0,
+      aiEnabledHours: d.aiEnabledHours || 0,
+      frequency: d.frequency || 'monthly',
+      occurrencesPerYear: d.occurrencesPerYear || 12,
+      timeMultiplier: d.timeMultiplier || 1,
+      annualHoursFreed: d.annualHoursFreed || 0,
+      payrollFreed: d.payrollFreed || 0,
+      scenario: d.scenario || '',
+      oldWay: d.oldWay || '',
+      aiVoiceWay: d.aiVoiceWay || ''
+    }));
+
     // Check if anthropic client is initialized
     if (!anthropic) {
-      console.error('Anthropic client not properly initialized');
+      console.error('❌ Anthropic client not properly initialized');
       return res.status(500).json({
         error: 'AI service not available',
-        details: 'Anthropic client initialization failed'
+        details: 'Anthropic client initialization failed. Please check ANTHROPIC_API_KEY in .env file.'
+      });
+    }
+
+    // Verify API key is actually set
+    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here') {
+      console.error('❌ ANTHROPIC_API_KEY is missing or not configured');
+      return res.status(500).json({
+        error: 'API key not configured',
+        details: 'ANTHROPIC_API_KEY is missing or not set in .env file. Please add your Anthropic API key.'
       });
     }
 
@@ -68,7 +92,7 @@ router.post('/generate-deliverable-content', async (req, res) => {
           industry,
           companyName,
           hourlyRate: hourlyRate || 50, // Default fallback
-          existingDeliverables: deliverables // Pass first 5 deliverables for context
+          existingDeliverables: normalizedDeliverables // Pass first 5 deliverables for context
         });
         allDeliverables.push(frustrationDeliverable);
         console.log(`✅ 6th deliverable added: "${frustrationDeliverable.title}"`);
@@ -81,16 +105,30 @@ router.post('/generate-deliverable-content', async (req, res) => {
     console.log(`🚀 Generating content in parallel for ${allDeliverables.length} deliverables...`);
 
     // Generate each deliverable in parallel for speed
-    const generatePromises = allDeliverables.map((deliverable, index) =>
-      generateSingleDeliverable({
-        deliverable,
+    const generatePromises = allDeliverables.map((deliverable, index) => {
+      // Ensure deliverable has all required properties
+      const normalizedDeliverable = {
+        ...deliverable,
+        baselineHours: deliverable.baselineHours || 0,
+        aiEnabledHours: deliverable.aiEnabledHours || 0,
+        frequency: deliverable.frequency || 'monthly',
+        occurrencesPerYear: deliverable.occurrencesPerYear || 12,
+        timeMultiplier: deliverable.timeMultiplier || 1,
+        annualHoursFreed: deliverable.annualHoursFreed || 0,
+        payrollFreed: deliverable.payrollFreed || 0,
+        scenario: deliverable.scenario || '',
+        oldWay: deliverable.oldWay || '',
+        aiVoiceWay: deliverable.aiVoiceWay || ''
+      };
+      return generateSingleDeliverable({
+        deliverable: normalizedDeliverable,
         index,
         jobTitle,
         industry,
         companyName,
         companyContext
-      })
-    );
+      });
+    });
 
     // Wait for all deliverables to generate in parallel
     const generatedDeliverables = await Promise.all(generatePromises);
@@ -104,10 +142,19 @@ router.post('/generate-deliverable-content', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error generating deliverable content:', error);
+    console.error('❌ Error generating deliverable content:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error details:', {
+      message: error.message,
+      name: error.name,
+      status: error.status,
+      statusCode: error.statusCode
+    });
     res.status(500).json({
       error: 'Failed to generate deliverable content',
-      details: error.message
+      details: error.message,
+      type: error.name || 'UnknownError',
+      status: error.status || error.statusCode || 'N/A'
     });
   }
 });
@@ -271,6 +318,11 @@ router.post('/research-role-deliverables', async (req, res) => {
  */
 async function generateSingleDeliverable({ deliverable, index, jobTitle, industry, companyName, companyContext }) {
   try {
+    // Verify API key before making request
+    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here') {
+      throw new Error('ANTHROPIC_API_KEY is not configured. Please add your API key to .env file.');
+    }
+
     console.log(`📝 Generating deliverable #${index + 1}: ${deliverable.title}`);
 
     const prompt = buildSingleDeliverablePrompt({
@@ -315,6 +367,13 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
 
   } catch (error) {
     console.error(`❌ Error generating deliverable #${index + 1}:`, error);
+    console.error(`❌ Error details for deliverable "${deliverable.title}":`, {
+      message: error.message,
+      name: error.name,
+      status: error.status,
+      statusCode: error.statusCode,
+      response: error.response?.data || error.response || 'No response data'
+    });
     throw error;
   }
 }
@@ -382,13 +441,13 @@ ROLE BEING ANALYZED:
 
 DELIVERABLE TO ANALYZE:
 - Title: ${deliverable.title}
-- Baseline Hours: ${deliverable.baselineHours} hours per ${deliverable.frequency}
-- AI-Enabled Hours: ${deliverable.aiEnabledHours} hours
-- Frequency: ${deliverable.frequency}
-- Annual Occurrences: ${deliverable.occurrencesPerYear}
-- Time Multiplier: ${deliverable.timeMultiplier}x faster
-- Annual Hours Freed: ${deliverable.annualHoursFreed}
-- Payroll Freed: $${deliverable.payrollFreed.toFixed(0)}
+- Baseline Hours: ${deliverable.baselineHours || 0} hours per ${deliverable.frequency || 'month'}
+- AI-Enabled Hours: ${deliverable.aiEnabledHours || 0} hours
+- Frequency: ${deliverable.frequency || 'monthly'}
+- Annual Occurrences: ${deliverable.occurrencesPerYear || 12}
+- Time Multiplier: ${deliverable.timeMultiplier || 1}x faster
+- Annual Hours Freed: ${deliverable.annualHoursFreed || 0}
+- Payroll Freed: $${(deliverable.payrollFreed || 0).toFixed(0)}
 
 EXISTING NARRATIVE:
 - Scenario: ${deliverable.scenario}
@@ -524,7 +583,7 @@ DELIVERABLE #${index + 1}: ${d.title}
 - Annual Occurrences: ${d.occurrencesPerYear}
 - Time Multiplier: ${d.timeMultiplier}x faster
 - Annual Hours Freed: ${d.annualHoursFreed}
-- Payroll Freed: $${d.payrollFreed.toFixed(0)}
+- Payroll Freed: $${(d.payrollFreed || 0).toFixed(0)}
 
 EXISTING NARRATIVE:
 - Scenario: ${d.scenario}
