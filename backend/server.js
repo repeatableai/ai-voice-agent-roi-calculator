@@ -32,7 +32,7 @@ const { logInfo, logError } = require('./utils/logger');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080; // Fly.io uses 8080, Render uses 10000, local uses 3000
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // ===================================
