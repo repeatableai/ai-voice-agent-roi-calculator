@@ -247,55 +247,66 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Static Files - Serve AIVA Frontend
 // ===================================
 
-// Path resolution for Render compatibility - wrapped in try-catch to prevent startup errors
+// Path resolution for Render compatibility
+// CRITICAL: In Render, server starts from backend/ directory
+// So process.cwd() = /opt/render/project/src/backend (NOT project root!)
+// We need to use __dirname which is /opt/render/project/src/backend
+// Then go up one level: ../AIVA/dist = /opt/render/project/src/AIVA/dist
+
 let finalPath;
 let frontendPath;
 let fallbackPath;
 
 try {
-  // Use process.cwd() for Render compatibility
-  // In Render: process.cwd() = /opt/render/project/src (project root)
-  // In local: process.cwd() = project root
-  const projectRoot = process.cwd();
-  frontendPath = path.join(projectRoot, 'AIVA', 'dist');
-
-  // Fallback to __dirname for local development if needed
-  fallbackPath = path.join(__dirname, '../AIVA/dist');
-
-  // Determine final path - use process.cwd() path if it exists, otherwise fallback
-  if (fs.existsSync(frontendPath)) {
-    finalPath = frontendPath;
-  } else if (fs.existsSync(fallbackPath)) {
-    finalPath = fallbackPath;
-    logInfo(`Using fallback path: ${fallbackPath}`);
-  } else {
-    // Try alternative paths
-    const alternatives = [
-      path.join(process.cwd(), 'AIVA', 'dist'),
-      path.join(__dirname, '../AIVA/dist'),
-      path.join(__dirname, '../../AIVA/dist'),
-    ];
-    
-    for (const altPath of alternatives) {
-      if (fs.existsSync(altPath)) {
-        finalPath = altPath;
-        logInfo(`Using alternative path: ${altPath}`);
-        break;
-      }
-    }
-    
-    // If still not found, use frontendPath as default (will error later with better logging)
-    if (!finalPath) {
-      finalPath = frontendPath;
+  // In Render: startCommand is "cd backend && npm start"
+  // So process.cwd() = /opt/render/project/src/backend
+  // __dirname = /opt/render/project/src/backend
+  // We need to go up one level to get to project root
+  
+  // Primary path: from __dirname (backend/) go up to project root, then to AIVA/dist
+  const primaryPath = path.join(__dirname, '../AIVA/dist');
+  
+  // Alternative: try process.cwd() but it might be backend/ directory
+  const altPath1 = path.join(process.cwd(), 'AIVA', 'dist');
+  
+  // If process.cwd() is backend/, try going up one level
+  const altPath2 = path.join(process.cwd(), '../AIVA/dist');
+  
+  // Try all paths in order
+  const pathsToTry = [
+    primaryPath,      // __dirname/../AIVA/dist (most reliable)
+    altPath1,        // process.cwd()/AIVA/dist
+    altPath2,        // process.cwd()/../AIVA/dist
+    path.join(__dirname, '../../AIVA/dist'), // Backup
+  ];
+  
+  logInfo(`[PATH] Trying paths in order:`);
+  for (const testPath of pathsToTry) {
+    logInfo(`[PATH] Checking: ${testPath} - exists: ${fs.existsSync(testPath)}`);
+    if (fs.existsSync(testPath)) {
+      finalPath = testPath;
+      logInfo(`[PATH] ✓ Found: ${finalPath}`);
+      break;
     }
   }
+  
+  if (!finalPath) {
+    logError(`[PATH] ✗ No valid path found! Tried:`);
+    pathsToTry.forEach(p => logError(`[PATH]   - ${p}`));
+    // Use primary path as fallback (will show error when trying to serve)
+    finalPath = primaryPath;
+  }
+  
+  frontendPath = primaryPath;
+  fallbackPath = altPath1;
+  
 } catch (err) {
   logError(`CRITICAL: Error in path resolution: ${err.message}`);
   logError(`CRITICAL: Stack: ${err.stack}`);
   // Set a default path to prevent server crash
   finalPath = path.join(__dirname, '../AIVA/dist');
-  frontendPath = path.join(process.cwd(), 'AIVA', 'dist');
-  fallbackPath = path.join(__dirname, '../AIVA/dist');
+  frontendPath = finalPath;
+  fallbackPath = path.join(process.cwd(), 'AIVA', 'dist');
 }
 
 // Comprehensive logging for debugging
