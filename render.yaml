@@ -12,9 +12,9 @@ services:
       - key: PORT
         value: 10000
       - key: ANTHROPIC_API_KEY
-        sync: false  # Set this in Render dashboard
+        sync: false  # REQUIRED: Set this in Render dashboard (see RENDER_EXACT_STEPS.md)
       - key: OPENAI_API_KEY
-        sync: false  # Set this in Render dashboard
+        sync: false  # REQUIRED: Set this in Render dashboard (see RENDER_EXACT_STEPS.md)
       - key: SESSION_SECRET
         generateValue: true
       - key: JWT_SECRET
