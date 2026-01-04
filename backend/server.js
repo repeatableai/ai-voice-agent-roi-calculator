@@ -311,53 +311,88 @@ if (fs.existsSync(finalPath)) {
   }
 }
 
-// Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
-// Wrap express.static in error-handling middleware to prevent JSON responses
+// Serve static files (CSS, JS, images, etc.) - CUSTOM HANDLER to avoid express.static errors
+// This completely bypasses express.static to have full control over error handling
 app.use((req, res, next) => {
   // Skip API routes
   if (req.path.startsWith('/api')) {
     return next();
   }
   
-  // Only handle static files if directory exists
-  if (!fs.existsSync(finalPath)) {
-    // If it's a file request and directory doesn't exist, return proper 404
-    if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-      return res.status(404).type('text/plain').send(`Static file directory not found`);
-    }
-    // Otherwise continue to catch-all route
+  // Only handle file requests (has extension)
+  if (!req.path.match(/\.[a-zA-Z0-9]+$/)) {
     return next();
   }
   
-  // Set up express.static with error handling
-  const staticMiddleware = express.static(finalPath, {
-    maxAge: '1y',
-    etag: true,
-    index: false,
-    fallthrough: true
-  });
+  // Check if directory exists
+  if (!fs.existsSync(finalPath)) {
+    logError(`Static file requested but directory doesn't exist: ${finalPath}`);
+    return res.status(404).type('text/plain').send(`Static files directory not found`);
+  }
   
-  // Call static middleware with error handling
-  staticMiddleware(req, res, (err) => {
-    if (err) {
-      // Error occurred - handle it here, don't let it reach error handler
-      logError(`Static file error for ${req.path}: ${err.message}`);
-      if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-        // It's a file request - return proper 404
-        return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
+  // Build file path - remove leading slash and join with finalPath
+  const filePath = path.join(finalPath, req.path.replace(/^\//, ''));
+  
+  // Security check - ensure file is within finalPath directory
+  const resolvedPath = path.resolve(filePath);
+  const resolvedFinalPath = path.resolve(finalPath);
+  if (!resolvedPath.startsWith(resolvedFinalPath)) {
+    logError(`Security: Attempted path traversal: ${req.path}`);
+    return res.status(403).type('text/plain').send('Forbidden');
+  }
+  
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
+  }
+  
+  // Check if it's a file (not directory)
+  const stats = fs.statSync(filePath);
+  if (!stats.isFile()) {
+    return res.status(404).type('text/plain').send(`Not a file: ${req.path}`);
+  }
+  
+  // Determine content type based on extension
+  const ext = path.extname(filePath).toLowerCase();
+  const contentTypes = {
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.html': 'text/html',
+    '.txt': 'text/plain',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject'
+  };
+  const contentType = contentTypes[ext] || 'application/octet-stream';
+  
+  // Set headers
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
+  
+  // Read and send file
+  try {
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('error', (err) => {
+      logError(`Error reading file ${filePath}: ${err.message}`);
+      if (!res.headersSent) {
+        res.status(500).type('text/plain').send(`Error reading file: ${err.message}`);
       }
-      // Not a file request, continue to next middleware
-      return next();
+    });
+    fileStream.pipe(res);
+  } catch (err) {
+    logError(`Error serving file ${filePath}: ${err.message}`);
+    if (!res.headersSent) {
+      res.status(500).type('text/plain').send(`Error serving file: ${err.message}`);
     }
-    
-    // If response was sent, don't continue
-    if (res.headersSent) {
-      return;
-    }
-    
-    // If no error and response not sent, continue to next middleware
-    next();
-  });
+  }
 });
 
 // Serve index.html for non-API routes (SPA routing)
