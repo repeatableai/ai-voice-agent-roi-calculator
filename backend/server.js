@@ -265,7 +265,8 @@ if (fs.existsSync(frontendPath)) {
 app.use(express.static(frontendPath, {
   maxAge: '1y',
   etag: true,
-  index: false // Don't serve index.html automatically
+  index: false, // Don't serve index.html automatically
+  fallthrough: true // Continue to next middleware if file not found
 }));
 
 // Serve index.html for non-API routes (SPA routing)
@@ -276,7 +277,14 @@ app.get('*', (req, res, next) => {
     return next();
   }
   
-  // Serve index.html for all frontend routes
+  // Skip static file requests (has file extension) - express.static should handle these
+  // If express.static didn't serve it, it means the file doesn't exist
+  // In that case, we'll let the 404 handler deal with it
+  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    return next(); // File request that wasn't found - let 404 handle it
+  }
+  
+  // Serve index.html for all other frontend routes (SPA routing)
   const indexPath = path.join(frontendPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
@@ -290,9 +298,9 @@ app.get('*', (req, res, next) => {
 // Error Handling
 // ===================================
 
-// 404 handler - only for API routes
+// 404 handler
 app.use((req, res) => {
-  // Only return JSON for API routes
+  // Return JSON for API routes
   if (req.path.startsWith('/api')) {
     return res.status(404).json({
       error: 'Not Found',
@@ -300,7 +308,12 @@ app.use((req, res) => {
     });
   }
   
-  // For frontend routes, try to serve index.html as fallback
+  // For missing static files, return 404 with proper content type
+  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    return res.status(404).send(`File not found: ${req.path}`);
+  }
+  
+  // For frontend routes, try to serve index.html as fallback (SPA routing)
   const indexPath = path.join(frontendPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
