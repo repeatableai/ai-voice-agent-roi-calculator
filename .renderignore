@@ -1,0 +1,31 @@
+# Render ignore file - exclude everything except what we need
+
+# Exclude old public folder (wrong app)
+/public/
+
+# Exclude other projects
+/Dynamic Generic UpSell App/
+/Financial consolidation platform/
+/field-sell-pro-*/
+/constellation-consolidator/
+
+# Exclude docs and configs not needed for deployment
+*.md
+!README.md
+!RENDER_*.md
+
+# Exclude test files
+/tests/
+*.test.js
+*.spec.js
+
+# Exclude dev files
+.env.local
+.env.development
+*.log
+
+# Keep only what we need:
+# - backend/ (for backend service)
+# - AIVA/ (for frontend service)
+# - render.yaml (for Blueprint)
+

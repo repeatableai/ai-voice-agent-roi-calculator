@@ -1,0 +1,12 @@
+# Render Static Site Configuration for AIVA Frontend
+# This file helps Render identify the correct frontend to deploy
+
+name: aiva-frontend
+type: static
+rootDirectory: AIVA
+buildCommand: npm install && npm run build
+publishDirectory: dist
+environmentVariables:
+  - key: VITE_API_URL
+    value: https://aiva-backend.onrender.com  # Update with your backend URL
+
