@@ -261,45 +261,64 @@ if (fs.existsSync(frontendPath)) {
 }
 
 // Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
+// express.static will automatically serve files from frontendPath
 app.use(express.static(frontendPath, {
   maxAge: '1y',
   etag: true,
-  index: false, // Don't serve index.html automatically
-  fallthrough: true // Continue to next middleware if file not found
+  index: false, // Don't serve index.html automatically - we'll handle it manually
+  fallthrough: false // Don't fall through if file not found - return 404
 }));
 
 // Serve index.html for non-API routes (SPA routing)
-// This catches all routes that don't match static files or API routes
+// This only catches routes that don't match static files
 app.get('*', (req, res, next) => {
-  // Skip API routes - let 404 handler deal with them
+  // Skip API routes
   if (req.path.startsWith('/api')) {
     return next();
   }
   
-  // Skip static file requests (has file extension) - express.static should handle these
-  // If express.static didn't serve it, it means the file doesn't exist
-  // In that case, we'll let the 404 handler deal with it
+  // Skip requests for files with extensions - these should be handled by express.static
+  // If we get here, express.static didn't find the file (fallthrough: false means it returns 404)
+  // But we still want to handle SPA routes, so check if it's a file request
   if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    return next(); // File request that wasn't found - let 404 handle it
+    // This is a file request that wasn't found - let express.static handle the 404
+    return next();
   }
   
-  // Serve index.html for all other frontend routes (SPA routing)
+  // Serve index.html for all other routes (SPA routing)
   const indexPath = path.join(frontendPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
+  if (!fs.existsSync(indexPath)) {
     logError(`index.html not found at: ${indexPath}`);
-    next();
+    return res.status(404).type('text/html').send(`
+      <html><body>
+        <h1>404 - Frontend not found</h1>
+        <p>Path: ${indexPath}</p>
+        <p>Frontend path: ${frontendPath}</p>
+      </body></html>
+    `);
   }
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      // Don't pass to error handler - return HTML error instead
+      logError(`Error serving index.html: ${err.message}`);
+      return res.status(500).type('text/html').send(`
+        <html><body>
+          <h1>500 - Error serving frontend</h1>
+          <p>${err.message}</p>
+        </body></html>
+      `);
+    }
+  });
 });
 
 // ===================================
 // Error Handling
 // ===================================
 
-// 404 handler
+// 404 handler - only for API routes
 app.use((req, res) => {
-  // Return JSON for API routes
+  // Only API routes should reach here (frontend routes handled above)
   if (req.path.startsWith('/api')) {
     return res.status(404).json({
       error: 'Not Found',
@@ -307,17 +326,20 @@ app.use((req, res) => {
     });
   }
   
-  // For missing static files, return 404 with proper content type
-  if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    return res.status(404).send(`File not found: ${req.path}`);
-  }
-  
-  // For frontend routes, try to serve index.html as fallback (SPA routing)
+  // This shouldn't happen for frontend routes, but just in case
   const indexPath = path.join(frontendPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('Frontend not found. Please ensure the frontend is built.');
+    res.status(404).type('text/html').send(`
+      <html>
+        <body>
+          <h1>404 - Frontend not found</h1>
+          <p>Please ensure the frontend is built.</p>
+          <p>Path: ${frontendPath}</p>
+        </body>
+      </html>
+    `);
   }
 });
 
