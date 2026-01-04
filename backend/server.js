@@ -248,27 +248,52 @@ app.use('/api/aiva', aivaDOCXRoutes);
 
 // Serve AIVA frontend static files (built React app)
 const frontendPath = path.join(__dirname, '../AIVA/dist');
-app.use(express.static(frontendPath));
 
-// Serve frontend for all non-API routes
+// Serve static files first (CSS, JS, images, etc.)
+app.use(express.static(frontendPath, {
+  maxAge: '1y', // Cache static assets
+  etag: true
+}));
+
+// Serve frontend index.html for all non-API GET routes
+// This must come AFTER static file serving so static files are served first
 app.get('*', (req, res, next) => {
-  // Don't serve frontend for API routes
+  // Skip API routes
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(frontendPath, 'index.html'));
+  
+  // Skip if it's a file request (has extension) - let 404 handle it
+  if (req.path.includes('.')) {
+    return next();
+  }
+  
+  // Serve index.html for all other routes (SPA routing)
+  const indexPath = path.join(frontendPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      next(err);
+    }
+  });
 });
 
 // ===================================
 // Error Handling
 // ===================================
 
-// 404 handler
+// 404 handler - only for API routes and missing files
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `Cannot ${req.method} ${req.path}`
-  });
+  // If it's an API route, return JSON
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.path}`
+    });
+  }
+  
+  // For frontend routes, serve index.html (SPA fallback)
+  const indexPath = path.join(frontendPath, 'index.html');
+  res.sendFile(indexPath);
 });
 
 // Global error handler
