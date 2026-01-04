@@ -9,6 +9,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { createClient } = require('redis');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 // Import routes
@@ -249,41 +250,49 @@ app.use('/api/aiva', aivaDOCXRoutes);
 // Serve AIVA frontend static files (built React app)
 const frontendPath = path.join(__dirname, '../AIVA/dist');
 
-// Serve static files first (CSS, JS, images, etc.)
+// Log frontend path for debugging
+logInfo(`Frontend path: ${frontendPath}`);
+const fs = require('fs');
+if (fs.existsSync(frontendPath)) {
+  logInfo(`Frontend directory exists`);
+  const files = fs.readdirSync(frontendPath);
+  logInfo(`Frontend files: ${files.join(', ')}`);
+} else {
+  logError(`Frontend directory does not exist at: ${frontendPath}`);
+}
+
+// Serve static files (CSS, JS, images, etc.) - MUST come before catch-all
 app.use(express.static(frontendPath, {
-  maxAge: '1y', // Cache static assets
-  etag: true
+  maxAge: '1y',
+  etag: true,
+  index: false // Don't serve index.html automatically
 }));
 
-// Serve frontend index.html for all non-API GET routes
-// This must come AFTER static file serving so static files are served first
+// Serve index.html for non-API routes (SPA routing)
+// This catches all routes that don't match static files or API routes
 app.get('*', (req, res, next) => {
-  // Skip API routes
+  // Skip API routes - let 404 handler deal with them
   if (req.path.startsWith('/api')) {
     return next();
   }
   
-  // Skip if it's a file request (has extension) - let 404 handle it
-  if (req.path.includes('.')) {
-    return next();
-  }
-  
-  // Serve index.html for all other routes (SPA routing)
+  // Serve index.html for all frontend routes
   const indexPath = path.join(frontendPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      next(err);
-    }
-  });
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    logError(`index.html not found at: ${indexPath}`);
+    next();
+  }
 });
 
 // ===================================
 // Error Handling
 // ===================================
 
-// 404 handler - only for API routes and missing files
+// 404 handler - only for API routes
 app.use((req, res) => {
-  // If it's an API route, return JSON
+  // Only return JSON for API routes
   if (req.path.startsWith('/api')) {
     return res.status(404).json({
       error: 'Not Found',
@@ -291,9 +300,13 @@ app.use((req, res) => {
     });
   }
   
-  // For frontend routes, serve index.html (SPA fallback)
+  // For frontend routes, try to serve index.html as fallback
   const indexPath = path.join(frontendPath, 'index.html');
-  res.sendFile(indexPath);
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send('Frontend not found. Please ensure the frontend is built.');
+  }
 });
 
 // Global error handler
