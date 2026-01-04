@@ -252,7 +252,6 @@ const frontendPath = path.join(__dirname, '../AIVA/dist');
 
 // Log frontend path for debugging
 logInfo(`Frontend path: ${frontendPath}`);
-const fs = require('fs');
 if (fs.existsSync(frontendPath)) {
   logInfo(`Frontend directory exists`);
   const files = fs.readdirSync(frontendPath);
