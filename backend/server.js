@@ -476,7 +476,20 @@ app.use((err, req, res, next) => {
     if (!res.headersSent) {
       const contentType = req.path.endsWith('.css') ? 'text/css' : 
                          req.path.endsWith('.js') ? 'application/javascript' : 'text/plain';
-      return res.status(err.statusCode || 500).type(contentType).send(`/* Error: ${err.message} */`);
+      // Try to serve the file directly if it exists (fallback)
+      const filePath = path.join(finalPath, req.path.replace(/^\//, ''));
+      if (fs.existsSync(filePath)) {
+        logInfo(`[ERROR HANDLER] File exists, attempting to serve directly: ${filePath}`);
+        return res.sendFile(filePath, (sendErr) => {
+          if (sendErr) {
+            logError(`[ERROR HANDLER] Failed to send file: ${sendErr.message}`);
+            const statusCode = err.statusCode || err.status || 500;
+            return res.status(statusCode).type(contentType).send(`/* Error loading ${req.path}: ${err.message} */`);
+          }
+        });
+      }
+      const statusCode = err.statusCode || err.status || 500;
+      return res.status(statusCode).type(contentType).send(`/* Error loading ${req.path}: ${err.message} */`);
     }
     return;
   }
