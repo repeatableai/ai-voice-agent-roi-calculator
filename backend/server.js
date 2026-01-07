@@ -329,6 +329,15 @@ if (fs.existsSync(finalPath)) {
 // Serve static files (CSS, JS, images, etc.) - Use express.static for reliability
 if (fs.existsSync(finalPath)) {
   try {
+    // Add logging middleware before static to debug browser requests
+    app.use((req, res, next) => {
+      // Log static file requests for debugging
+      if (req.path.match(/\.(css|js|png|jpg|svg|woff|woff2|ttf|eot)$/i) && !req.path.startsWith('/api')) {
+        logInfo(`[STATIC REQUEST] ${req.method} ${req.path} - User-Agent: ${req.get('user-agent')?.substring(0, 50)}`);
+      }
+      next();
+    });
+    
     // Use express.static middleware - express handles content types automatically
     // fallthrough: true (default) allows catch-all route to handle missing files with proper content types
     app.use(express.static(finalPath, {
