@@ -131,14 +131,43 @@ router.post('/generate-deliverable-content', async (req, res) => {
     });
 
     // Wait for all deliverables to generate in parallel
-    const generatedDeliverables = await Promise.all(generatePromises);
+    // Use allSettled instead of all so partial failures don't crash the entire request
+    const results = await Promise.allSettled(generatePromises);
 
-    console.log(`✅ All ${generatedDeliverables.length} deliverables generated successfully`);
+    // Process results - handle both fulfilled and rejected promises
+    const generatedDeliverables = [];
+    const errors = [];
 
-    // Return generated content
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        generatedDeliverables.push(result.value);
+      } else {
+        const deliverable = allDeliverables[index];
+        console.error(`❌ Failed to generate deliverable #${index + 1} "${deliverable?.title || 'Unknown'}":`, result.reason);
+        errors.push({
+          index: index + 1,
+          title: deliverable?.title || 'Unknown',
+          error: result.reason?.message || 'Unknown error'
+        });
+        // Include the original deliverable with error flag so frontend can handle it
+        generatedDeliverables.push({
+          ...deliverable,
+          error: true,
+          errorMessage: result.reason?.message || 'Failed to generate content'
+        });
+      }
+    });
+
+    console.log(`✅ Generated ${generatedDeliverables.length} deliverables (${errors.length} errors)`);
+
+    // Return generated content with error information
     res.json({
-      success: true,
-      deliverables: generatedDeliverables
+      success: errors.length === 0,
+      deliverables: generatedDeliverables,
+      ...(errors.length > 0 && {
+        errors: errors,
+        warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`
+      })
     });
 
   } catch (error) {
