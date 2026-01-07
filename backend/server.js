@@ -328,24 +328,41 @@ if (fs.existsSync(finalPath)) {
 
 // Serve static files (CSS, JS, images, etc.) - Use express.static for reliability
 if (fs.existsSync(finalPath)) {
-  // Use express.static middleware - more reliable than custom handler
-  app.use(express.static(finalPath, {
-    maxAge: '1y', // Cache for 1 year
-    etag: true,
-    lastModified: true,
-    setHeaders: (res, filePath) => {
-      // Set proper content types
-      const ext = path.extname(filePath).toLowerCase();
-      if (ext === '.css') {
-        res.setHeader('Content-Type', 'text/css');
-      } else if (ext === '.js') {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
+  try {
+    // Use express.static middleware - express handles content types automatically
+    app.use(express.static(finalPath, {
+      maxAge: '1y', // Cache for 1 year
+      etag: true,
+      lastModified: true
+      // Removed setHeaders - express.static handles content types automatically
+    }));
+    logInfo(`[STATIC] Serving static files from: ${finalPath}`);
+    
+    // Verify files are accessible
+    const assetsPath = path.join(finalPath, 'assets');
+    if (fs.existsSync(assetsPath)) {
+      const assetFiles = fs.readdirSync(assetsPath);
+      logInfo(`[STATIC] Found ${assetFiles.length} asset files in assets/ directory`);
     }
-  }));
-  logInfo(`[STATIC] Serving static files from: ${finalPath}`);
+  } catch (err) {
+    logError(`[STATIC] Error setting up static file serving: ${err.message}`);
+    logError(`[STATIC] Stack: ${err.stack}`);
+  }
 } else {
   logError(`[STATIC] Static files directory not found: ${finalPath}`);
+  logError(`[STATIC] Current working directory: ${process.cwd()}`);
+  logError(`[STATIC] __dirname: ${__dirname}`);
+  
+  // Try to list what's actually in the directory
+  try {
+    const parentDir = path.dirname(finalPath);
+    if (fs.existsSync(parentDir)) {
+      const parentFiles = fs.readdirSync(parentDir);
+      logError(`[STATIC] Files in parent directory: ${parentFiles.join(', ')}`);
+    }
+  } catch (e) {
+    logError(`[STATIC] Cannot list parent directory: ${e.message}`);
+  }
 }
 
 // Serve index.html for non-API routes (SPA routing)
