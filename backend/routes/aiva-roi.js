@@ -102,37 +102,85 @@ router.post('/generate-deliverable-content', async (req, res) => {
       }
     }
 
-    console.log(`🚀 Generating content in parallel for ${allDeliverables.length} deliverables...`);
+    // Check if we're in production (Render) - use sequential processing to avoid timeouts/rate limits
+    const isProduction = process.env.NODE_ENV === 'production';
+    const useSequential = isProduction; // Use sequential in production to avoid Render timeout/rate limit issues
+    
+    console.log(`🚀 Generating content ${useSequential ? 'sequentially' : 'in parallel'} for ${allDeliverables.length} deliverables...`);
 
-    // Generate each deliverable in parallel for speed
-    const generatePromises = allDeliverables.map((deliverable, index) => {
-      // Ensure deliverable has all required properties
-      const normalizedDeliverable = {
-        ...deliverable,
-        baselineHours: deliverable.baselineHours || 0,
-        aiEnabledHours: deliverable.aiEnabledHours || 0,
-        frequency: deliverable.frequency || 'monthly',
-        occurrencesPerYear: deliverable.occurrencesPerYear || 12,
-        timeMultiplier: deliverable.timeMultiplier || 1,
-        annualHoursFreed: deliverable.annualHoursFreed || 0,
-        payrollFreed: deliverable.payrollFreed || 0,
-        scenario: deliverable.scenario || '',
-        oldWay: deliverable.oldWay || '',
-        aiVoiceWay: deliverable.aiVoiceWay || ''
-      };
-      return generateSingleDeliverable({
-        deliverable: normalizedDeliverable,
-        index,
-        jobTitle,
-        industry,
-        companyName,
-        companyContext
+    let results;
+    
+    if (useSequential) {
+      // Sequential processing for production (avoids Render timeout and rate limit issues)
+      console.log('📌 Using sequential processing (production mode)');
+      results = [];
+      for (let i = 0; i < allDeliverables.length; i++) {
+        const deliverable = allDeliverables[i];
+        const normalizedDeliverable = {
+          ...deliverable,
+          baselineHours: deliverable.baselineHours || 0,
+          aiEnabledHours: deliverable.aiEnabledHours || 0,
+          frequency: deliverable.frequency || 'monthly',
+          occurrencesPerYear: deliverable.occurrencesPerYear || 12,
+          timeMultiplier: deliverable.timeMultiplier || 1,
+          annualHoursFreed: deliverable.annualHoursFreed || 0,
+          payrollFreed: deliverable.payrollFreed || 0,
+          scenario: deliverable.scenario || '',
+          oldWay: deliverable.oldWay || '',
+          aiVoiceWay: deliverable.aiVoiceWay || ''
+        };
+        
+        try {
+          const result = await generateSingleDeliverable({
+            deliverable: normalizedDeliverable,
+            index: i,
+            jobTitle,
+            industry,
+            companyName,
+            companyContext
+          });
+          results.push({ status: 'fulfilled', value: result });
+        } catch (error) {
+          console.error(`❌ Sequential generation failed for deliverable #${i + 1}:`, error);
+          results.push({ status: 'rejected', reason: error });
+        }
+        
+        // Small delay between requests to avoid rate limiting
+        if (i < allDeliverables.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+        }
+      }
+    } else {
+      // Parallel processing for local development (faster)
+      console.log('📌 Using parallel processing (development mode)');
+      const generatePromises = allDeliverables.map((deliverable, index) => {
+        const normalizedDeliverable = {
+          ...deliverable,
+          baselineHours: deliverable.baselineHours || 0,
+          aiEnabledHours: deliverable.aiEnabledHours || 0,
+          frequency: deliverable.frequency || 'monthly',
+          occurrencesPerYear: deliverable.occurrencesPerYear || 12,
+          timeMultiplier: deliverable.timeMultiplier || 1,
+          annualHoursFreed: deliverable.annualHoursFreed || 0,
+          payrollFreed: deliverable.payrollFreed || 0,
+          scenario: deliverable.scenario || '',
+          oldWay: deliverable.oldWay || '',
+          aiVoiceWay: deliverable.aiVoiceWay || ''
+        };
+        return generateSingleDeliverable({
+          deliverable: normalizedDeliverable,
+          index,
+          jobTitle,
+          industry,
+          companyName,
+          companyContext
+        });
       });
-    });
-
-    // Wait for all deliverables to generate in parallel
-    // Use allSettled instead of all so partial failures don't crash the entire request
-    const results = await Promise.allSettled(generatePromises);
+      
+      // Wait for all deliverables to generate in parallel
+      // Use allSettled instead of all so partial failures don't crash the entire request
+      results = await Promise.allSettled(generatePromises);
+    }
 
     // Process results - handle both fulfilled and rejected promises
     const generatedDeliverables = [];
