@@ -61,6 +61,17 @@ app.use(helmet({
   }
 }));
 
+// Force browsers to not cache CSP headers by adding cache-control
+app.use((req, res, next) => {
+  // Don't cache HTML responses (where CSP matters most)
+  if (req.path === '/' || !req.path.match(/\.[a-zA-Z0-9]+$/)) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
