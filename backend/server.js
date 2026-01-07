@@ -330,11 +330,12 @@ if (fs.existsSync(finalPath)) {
 if (fs.existsSync(finalPath)) {
   try {
     // Use express.static middleware - express handles content types automatically
+    // fallthrough: true (default) allows catch-all route to handle missing files with proper content types
     app.use(express.static(finalPath, {
       maxAge: '1y', // Cache for 1 year
       etag: true,
-      lastModified: true
-      // Removed setHeaders - express.static handles content types automatically
+      lastModified: true,
+      fallthrough: true // Continue to next middleware if file not found (so catch-all can handle with proper content type)
     }));
     logInfo(`[STATIC] Serving static files from: ${finalPath}`);
     
@@ -343,6 +344,7 @@ if (fs.existsSync(finalPath)) {
     if (fs.existsSync(assetsPath)) {
       const assetFiles = fs.readdirSync(assetsPath);
       logInfo(`[STATIC] Found ${assetFiles.length} asset files in assets/ directory`);
+      logInfo(`[STATIC] Sample files: ${assetFiles.slice(0, 3).join(', ')}`);
     }
   } catch (err) {
     logError(`[STATIC] Error setting up static file serving: ${err.message}`);
@@ -367,17 +369,22 @@ if (fs.existsSync(finalPath)) {
 
 // Serve index.html for non-API routes (SPA routing)
 // This only catches routes that don't match static files
+// express.static with fallthrough: false will handle static files, so this only handles SPA routes
 app.get('*', (req, res, next) => {
   // Skip API routes
   if (req.path.startsWith('/api')) {
     return next();
   }
   
-  // Handle missing static files - return proper 404 with correct content type
+  // Skip static file requests - express.static should have handled these
+  // But if it didn't (file not found), return 404
   if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
-    // This is a file request that wasn't found by express.static
-    // Return proper 404, not JSON
-    return res.status(404).type('text/plain').send(`File not found: ${req.path}`);
+    logError(`[SPA] Static file not found by express.static: ${req.path}`);
+    // Return proper 404 with correct content type
+    const contentType = req.path.endsWith('.css') ? 'text/css' : 
+                       req.path.endsWith('.js') ? 'application/javascript' : 
+                       'text/plain';
+    return res.status(404).type(contentType).send(`/* File not found: ${req.path} */`);
   }
   
   // Serve index.html for SPA routes
@@ -401,12 +408,14 @@ app.get('*', (req, res, next) => {
   res.sendFile(indexPath, (err) => {
     if (err) {
       logError(`Error serving index.html: ${err.message}`);
-      return res.status(500).type('text/html').send(`
-        <html><body>
-          <h1>500 - Error serving frontend</h1>
-          <p>${err.message}</p>
-        </body></html>
-      `);
+      if (!res.headersSent) {
+        return res.status(500).type('text/html').send(`
+          <html><body>
+            <h1>500 - Error serving frontend</h1>
+            <p>${err.message}</p>
+          </body></html>
+        `);
+      }
     }
   });
 });
