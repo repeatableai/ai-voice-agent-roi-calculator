@@ -148,13 +148,33 @@ router.post('/generate-deliverable-content', async (req, res) => {
       message: error.message,
       name: error.name,
       status: error.status,
-      statusCode: error.statusCode
+      statusCode: error.statusCode,
+      code: error.code,
+      cause: error.cause
     });
-    res.status(500).json({
+    console.error('❌ Request body:', JSON.stringify(req.body, null, 2));
+    
+    // Provide more helpful error messages
+    let errorMessage = error.message || 'Unknown error occurred';
+    let statusCode = 500;
+    
+    // Handle specific error types
+    if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
+      errorMessage = 'Request timed out. The AI generation is taking too long. Please try again with fewer deliverables.';
+      statusCode = 504;
+    } else if (error.message?.includes('API key') || error.message?.includes('authentication')) {
+      errorMessage = 'AI service authentication failed. Please check API key configuration.';
+      statusCode = 503;
+    } else if (error.message?.includes('rate limit')) {
+      errorMessage = 'AI service rate limit exceeded. Please try again in a moment.';
+      statusCode = 429;
+    }
+    
+    res.status(statusCode).json({
       error: 'Failed to generate deliverable content',
-      details: error.message,
+      details: errorMessage,
       type: error.name || 'UnknownError',
-      status: error.status || error.statusCode || 'N/A'
+      status: error.status || error.statusCode || statusCode
     });
   }
 });
