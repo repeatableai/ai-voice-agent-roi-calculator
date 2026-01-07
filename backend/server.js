@@ -468,7 +468,10 @@ app.use((err, req, res, next) => {
   if (!req.path.startsWith('/api') && req.path.match(/\.[a-zA-Z0-9]+$/)) {
     logError(`[ERROR HANDLER] Static file error reached error handler - this should not happen!`);
     logError(`[ERROR HANDLER] Path: ${req.path}`);
+    logError(`[ERROR HANDLER] Method: ${req.method}`);
     logError(`[ERROR HANDLER] Error: ${err.message}`);
+    logError(`[ERROR HANDLER] Error name: ${err.name}`);
+    logError(`[ERROR HANDLER] Error code: ${err.code}`);
     logError(`[ERROR HANDLER] Stack: ${err.stack}`);
     if (!res.headersSent) {
       const contentType = req.path.endsWith('.css') ? 'text/css' : 
