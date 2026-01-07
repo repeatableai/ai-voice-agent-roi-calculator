@@ -76,3 +76,4 @@ Render Blueprint is designed for web services (Node.js, Python, etc.) but not fo
 
 **This is the correct approach - backend via Blueprint, frontend manually!**
 
+

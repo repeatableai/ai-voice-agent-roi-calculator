@@ -109,3 +109,4 @@ echo "Frontend URL: $FRONTEND_URL"
 echo ""
 echo "Your services will automatically redeploy with the new environment variables."
 
+

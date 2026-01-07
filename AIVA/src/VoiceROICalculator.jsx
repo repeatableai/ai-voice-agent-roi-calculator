@@ -222,7 +222,27 @@ export default function VoiceROICalculator() {
         });
 
         if (!response.ok) {
-          throw new Error(`Research API failed: ${response.status}`);
+          let errorData;
+          const contentType = response.headers.get('content-type');
+          try {
+            if (contentType && contentType.includes('application/json')) {
+              errorData = await response.json();
+            } else {
+              const text = await response.text();
+              console.error('❌ Research API returned non-JSON error:', text);
+              throw new Error(`Research API failed: ${response.status} ${response.statusText}`);
+            }
+          } catch (parseError) {
+            throw new Error(`Research API failed: ${response.status} ${response.statusText}`);
+          }
+          throw new Error(errorData?.error || `Research API failed: ${response.status}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('❌ Research API returned non-JSON response:', text.substring(0, 200));
+          throw new Error('Invalid response format from research API');
         }
 
         const data = await response.json();
@@ -404,13 +424,39 @@ export default function VoiceROICalculator() {
 
       // Check if response is successful
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            const text = await response.text();
+            console.error('❌ API returned non-JSON error:', text);
+            errorData = { error: `Server error (${response.status}): ${response.statusText}` };
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+          errorData = { error: `Server error (${response.status}): ${response.statusText}` };
+        }
+        
         console.error('❌ API Error Response:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorData
+          error: errorData,
+          apiUrl: `${apiUrl}/api/aiva/generate-deliverable-content`
         });
-        alert(`API Error: ${errorData.error || 'Unknown error'}\n\nPlease check the console for details.`);
+        
+        const errorMessage = errorData?.error || 'Unknown error';
+        alert(`API Error (${response.status}): ${errorMessage}\n\nPlease check:\n1. Backend server is running\n2. VITE_API_URL is set correctly\n3. Check browser console for details.`);
+        return [];
+      }
+
+      // Parse JSON response
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ API returned non-JSON response:', text.substring(0, 200));
+        alert('API Error: Server returned invalid response format.\n\nPlease check backend server configuration.');
         return [];
       }
 
@@ -421,7 +467,16 @@ export default function VoiceROICalculator() {
       return data.deliverables || [];
     } catch (error) {
       console.error('❌ Failed to generate AI content:', error);
-      alert(`Network Error: ${error.message}\n\nPlease check your backend server is running on port 3002.`);
+      
+      // Provide helpful error messages based on error type
+      let errorMessage = error.message;
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'Cannot connect to backend server.\n\nPlease check:\n1. Backend server is running\n2. VITE_API_URL environment variable is set correctly\n3. CORS is configured on backend\n4. Check browser console for details.';
+      } else if (error.message.includes('JSON')) {
+        errorMessage = 'Invalid response from server.\n\nPlease check:\n1. Backend server is responding correctly\n2. API endpoint is correct\n3. Check browser console for details.';
+      }
+      
+      alert(`Network Error: ${errorMessage}`);
       return [];
     }
   };

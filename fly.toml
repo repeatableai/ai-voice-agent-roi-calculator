@@ -2,7 +2,7 @@ app = "aiva-roi-calculator"
 primary_region = "iad"
 
 [build]
-  builder = "paketobuildpacks/builder:base"
+  dockerfile = "Dockerfile"
 
 [env]
   NODE_ENV = "production"

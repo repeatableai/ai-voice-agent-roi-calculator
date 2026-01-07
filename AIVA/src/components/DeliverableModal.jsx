@@ -42,7 +42,20 @@ export default function DeliverableModal({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate DOCX');
+        const contentType = response.headers.get('content-type');
+        let errorMessage = `Failed to generate DOCX (${response.status})`;
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } else {
+            const text = await response.text();
+            console.error('❌ DOCX API returned non-JSON error:', text);
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       // Get filename from headers or create default
@@ -64,8 +77,8 @@ export default function DeliverableModal({
 
       console.log(`✅ Downloaded: ${filename}`);
     } catch (error) {
-      console.error('Error downloading DOCX:', error);
-      alert('Failed to download guide. Please try again.');
+      console.error('❌ Failed to download guide:', error);
+      alert(`Download Error: ${error.message}\n\nPlease check:\n1. Backend server is running\n2. VITE_API_URL is set correctly\n3. Check browser console for details.`);
     } finally {
       setIsDownloading(false);
     }
