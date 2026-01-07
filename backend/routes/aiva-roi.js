@@ -389,8 +389,13 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
       throw new Error('ANTHROPIC_API_KEY is not configured. Please add your API key to .env file.');
     }
 
-    console.log(`📝 Generating deliverable #${index + 1}: ${deliverable.title}`);
+    // Verify anthropic client is initialized
+    if (!anthropic) {
+      throw new Error('Anthropic client not initialized. Check ANTHROPIC_API_KEY configuration.');
+    }
 
+    console.log(`📝 Generating deliverable #${index + 1}: ${deliverable.title}`);
+    
     const prompt = buildSingleDeliverablePrompt({
       deliverable,
       index,
@@ -399,6 +404,10 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
       companyName,
       companyContext
     });
+    
+    console.log(`📝 Prompt length: ${prompt.length} chars`);
+    console.log(`📡 Making Anthropic API call for deliverable #${index + 1}...`);
+    const startTime = Date.now();
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
@@ -409,6 +418,9 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
         content: prompt
       }]
     });
+    
+    const duration = Date.now() - startTime;
+    console.log(`✅ Anthropic API call completed for deliverable #${index + 1} in ${duration}ms`);
 
     const responseText = message.content[0].text;
 
