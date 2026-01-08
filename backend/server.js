@@ -20,6 +20,11 @@ const aiRoutes = require('./routes/ai');
 const analyticsRoutes = require('./routes/analytics');
 const aivaROIRoutes = require('./routes/aiva-roi');
 const aivaDOCXRoutes = require('./routes/aiva-docx');
+const aivaAnalysesRoutes = require('./routes/aiva-analyses');
+const aivaMigrateRoutes = require('./routes/aiva-migrate');
+const companyRoutes = require('./routes/companies');
+const invitationRoutes = require('./routes/invitations');
+const adminRoutes = require('./routes/admin');
 
 // Import middleware
 const errorHandler = require('./middleware/error-handler');
@@ -253,6 +258,21 @@ app.use('/api/aiva', aivaROIRoutes);
 
 // AIVA DOCX Generation routes
 app.use('/api/aiva', aivaDOCXRoutes);
+
+// AIVA Analyses routes (persistent storage)
+app.use('/api/aiva/analyses', aivaAnalysesRoutes);
+
+// AIVA Migration routes (for localStorage migration)
+app.use('/api/aiva', aivaMigrateRoutes);
+
+// Company management routes
+app.use('/api/companies', companyRoutes);
+
+// Invitation routes
+app.use('/api/invitations', invitationRoutes);
+
+// Admin routes (super admin only)
+app.use('/api/admin', adminRoutes);
 
 // ===================================
 // Static Files - Serve AIVA Frontend

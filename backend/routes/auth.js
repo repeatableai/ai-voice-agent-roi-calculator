@@ -30,7 +30,7 @@ router.post('/register', validateRegistration, async (req, res, next) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { email, password, invitationToken } = req.body;
     const name = req.body.name || email.split('@')[0]; // Use email username as name if not provided
 
     // Check if user already exists
@@ -47,13 +47,68 @@ router.post('/register', validateRegistration, async (req, res, next) => {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    // Determine company assignment
+    let companyId = null;
+    let userRole = 'user';
+    let invitedBy = null;
+
+    // Check if invitation token provided
+    if (invitationToken) {
+      const invitationResult = await db.query(
+        `SELECT company_id, role, invited_by, expires_at 
+         FROM invitations 
+         WHERE token = $1 AND email = $2 AND accepted_at IS NULL AND expires_at > NOW()`,
+        [invitationToken, email]
+      );
+
+      if (invitationResult.rows.length > 0) {
+        const invitation = invitationResult.rows[0];
+        companyId = invitation.company_id;
+        userRole = invitation.role;
+        invitedBy = invitation.invited_by;
+      } else {
+        return res.status(400).json({ error: 'Invalid or expired invitation token' });
+      }
+    } else {
+      // Check if email domain matches existing company
+      const emailDomain = email.split('@')[1];
+      if (emailDomain) {
+        const companyResult = await db.query(
+          'SELECT id FROM companies WHERE domain = $1 AND subscription_status = $2',
+          [emailDomain, 'active']
+        );
+
+        if (companyResult.rows.length > 0) {
+          companyId = companyResult.rows[0].id;
+        }
+      }
+    }
+
     // Create user
     const result = await db.query(
-      `INSERT INTO users (email, password_hash, name, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, email, name, role, created_at`,
-      [email, passwordHash, name, 'user']
+      `INSERT INTO users (email, password_hash, name, role, company_id, invited_by, invited_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, email, name, role, company_id, created_at`,
+      [
+        email, 
+        passwordHash, 
+        name, 
+        userRole, 
+        companyId, 
+        invitedBy,
+        invitedBy ? new Date() : null
+      ]
     );
+
+    // Mark invitation as accepted if used
+    if (invitationToken) {
+      await db.query(
+        `UPDATE invitations 
+         SET accepted_at = NOW(), accepted_by_user_id = $1 
+         WHERE token = $2`,
+        [result.rows[0].id, invitationToken]
+      );
+    }
 
     const user = result.rows[0];
 
@@ -65,7 +120,8 @@ router.post('/register', validateRegistration, async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        companyId: user.company_id
       }
     });
 
@@ -88,9 +144,9 @@ router.post('/login', validateLogin, async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    // Get user from database
+    // Get user from database (include company_id)
     const result = await db.query(
-      'SELECT id, email, password_hash, name, role FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, name, role, company_id FROM users WHERE email = $1',
       [email]
     );
 
@@ -114,16 +170,25 @@ router.post('/login', validateLogin, async (req, res, next) => {
       [user.id]
     );
 
+    // Get user's company_id if exists
+    const userCompanyResult = await db.query(
+      'SELECT company_id FROM users WHERE id = $1',
+      [user.id]
+    );
+    const companyId = userCompanyResult.rows[0]?.company_id || null;
+
     // Create session
     req.session.userId = user.id;
     req.session.email = user.email;
     req.session.role = user.role;
+    req.session.companyId = companyId;
 
     // Generate JWT token (optional, for API access)
     const token = generateToken({
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
+      companyId: companyId
     });
 
     logInfo('User logged in:', { email, userId: user.id });
@@ -134,7 +199,8 @@ router.post('/login', validateLogin, async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        companyId: companyId
       },
       token
     });
@@ -179,7 +245,7 @@ router.get('/me', async (req, res, next) => {
     }
 
     const result = await db.query(
-      'SELECT id, email, name, role, created_at, last_login FROM users WHERE id = $1',
+      'SELECT id, email, name, role, company_id, created_at, last_login FROM users WHERE id = $1',
       [req.session.userId]
     );
 

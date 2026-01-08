@@ -4,6 +4,8 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const db = require('../db/database');
+const { requireAuth } = require('../middleware/auth');
 
 // Initialize Anthropic client
 let anthropic;
@@ -28,16 +30,21 @@ if (!process.env.ANTHROPIC_API_KEY) {
  * POST /api/aiva/generate-deliverable-content
  * Generates comprehensive, personalized content for all 5 deliverables
  */
-router.post('/generate-deliverable-content', async (req, res) => {
+router.post('/generate-deliverable-content', requireAuth, async (req, res) => {
   try {
     const {
       jobTitle,
       industry,
       companyName,
+      companyWebsite,
+      companySize,
       companyContext,
       deliverables,
       biggestFrustration,
-      hourlyRate
+      hourlyRate,
+      save = false, // Optional: save analysis to database
+      title, // Optional: custom title for saved analysis
+      metrics // Optional: calculated metrics to save
     } = req.body;
 
     // Validate required fields
@@ -177,15 +184,88 @@ router.post('/generate-deliverable-content', async (req, res) => {
 
     console.log(`✅ Generated ${generatedDeliverables.length} deliverables (${errors.length} errors)`);
 
-    // Return generated content with error information
-    res.json({
+    // Prepare response
+    const response = {
       success: errors.length === 0,
       deliverables: generatedDeliverables,
       ...(errors.length > 0 && {
         errors: errors,
         warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`
       })
-    });
+    };
+
+    // Optionally save analysis to database
+    if (save && req.session?.userId) {
+      try {
+        const userId = req.session.userId;
+        const userCompanyId = req.session.companyId;
+
+        if (!userCompanyId && req.session.role !== 'super_admin') {
+          console.warn('⚠️ Cannot save analysis: user does not belong to a company');
+        } else {
+          // Build analysis data object
+          const analysisData = {
+            deliverables: generatedDeliverables,
+            haradaMatrix: req.body.haradaMatrix || null,
+            metrics: metrics || req.body.metrics || {},
+            valueAddedSuggestions: req.body.valueAddedSuggestions || []
+          };
+
+          // Calculate metrics if not provided
+          const totalAnnualHoursFreed = generatedDeliverables.reduce((sum, d) => {
+            return sum + (parseFloat(d.annualHoursFreed) || 0);
+          }, 0);
+
+          const totalPayrollFreed = totalAnnualHoursFreed * parseFloat(hourlyRate || 50);
+          const annualValueCreated = metrics?.annualValueCreated || metrics?.conservativeEstimate || (totalPayrollFreed * 3.3);
+          const paybackDays = metrics?.paybackDays || null;
+          const productivityMultiplier = parseFloat(metrics?.productivityMultiplier) || null;
+
+          // Insert analysis
+          const saveResult = await db.query(
+            `INSERT INTO roi_analyses (
+              user_id, company_id, title, job_title, industry, company_name, 
+              company_website, company_size, company_context, hourly_rate, 
+              biggest_frustration, analysis_data, total_annual_hours_freed, 
+              total_payroll_freed, annual_value_created, payback_days, 
+              productivity_multiplier, status
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+            RETURNING id`,
+            [
+              userId,
+              userCompanyId || req.body.companyId || null,
+              title || `${jobTitle} - ${companyName}`,
+              jobTitle,
+              industry,
+              companyName,
+              companyWebsite || null,
+              companySize || null,
+              companyContext ? JSON.stringify(companyContext) : null,
+              parseFloat(hourlyRate || 50),
+              biggestFrustration || null,
+              JSON.stringify(analysisData),
+              totalAnnualHoursFreed,
+              totalPayrollFreed,
+              annualValueCreated,
+              paybackDays,
+              productivityMultiplier,
+              'completed'
+            ]
+          );
+
+          response.analysisId = saveResult.rows[0].id;
+          console.log(`✅ Analysis saved with ID: ${response.analysisId}`);
+        }
+      } catch (saveError) {
+        console.error('❌ Error saving analysis:', saveError);
+        // Don't fail the request if save fails, just log it
+        response.saveError = 'Failed to save analysis, but content was generated successfully';
+      }
+    }
+
+    // Return generated content with error information
+    res.json(response);
 
   } catch (error) {
     console.error('❌ Error generating deliverable content:', error);

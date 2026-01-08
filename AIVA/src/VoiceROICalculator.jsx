@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TrendingUp, Clock, DollarSign, Zap, Brain, CheckCircle, ArrowRight, Target, Lightbulb, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { TrendingUp, Clock, DollarSign, Zap, Brain, CheckCircle, ArrowRight, Target, Lightbulb, MessageCircle, ChevronDown, ChevronUp, Save, Check, FileText } from 'lucide-react';
 import { getDeliverablesForRole, ROLE_DELIVERABLES } from './data/roleDeliverables';
 import { getHaradaMatrixForRole } from './data/roleHaradaMatrices';
 import HaradaMatrix from './components/HaradaMatrix';
@@ -63,6 +64,9 @@ export default function VoiceROICalculator() {
   const [companyContext, setCompanyContext] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedAnalysisId, setSavedAnalysisId] = useState(null);
+  const [saveError, setSaveError] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     block2: false,
     block3: false
@@ -213,6 +217,7 @@ export default function VoiceROICalculator() {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Required for session cookies
           body: JSON.stringify({
             jobTitle,
             industry,
@@ -397,6 +402,7 @@ export default function VoiceROICalculator() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Required for session cookies
         body: JSON.stringify({
           jobTitle,
           industry,
@@ -630,6 +636,90 @@ export default function VoiceROICalculator() {
 
     setIsAnalyzing(false);
     setCurrentStep('results');
+  };
+
+  const saveAnalysis = async () => {
+    if (!analysisResults) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Validate required fields before sending
+      const hourlyRateValue = parseFloat(analysisResults.hourlyRate);
+      if (isNaN(hourlyRateValue) || hourlyRateValue < 0) {
+        throw new Error('Invalid hourly rate. Please ensure a valid hourly rate is provided.');
+      }
+
+      if (!analysisResults.jobTitle || !analysisResults.industry || !analysisResults.companyName) {
+        throw new Error('Missing required fields: job title, industry, or company name.');
+      }
+
+      if (!analysisResults.deliverables || !Array.isArray(analysisResults.deliverables)) {
+        throw new Error('Analysis data is incomplete. Please regenerate the analysis.');
+      }
+
+      const requestBody = {
+        title: `${analysisResults.jobTitle} - ${analysisResults.companyName}`,
+        jobTitle: analysisResults.jobTitle,
+        industry: analysisResults.industry,
+        companyName: analysisResults.companyName,
+        companyWebsite: analysisResults.companyWebsite || null,
+        companySize: analysisResults.companySize || null,
+        companyContext: analysisResults.companyContext || null,
+        hourlyRate: hourlyRateValue,
+        biggestFrustration: formData.biggestFrustration || null,
+        analysisData: {
+          deliverables: analysisResults.deliverables,
+          haradaMatrix: analysisResults.haradaMatrix || null,
+          metrics: analysisResults.metrics || {},
+          valueAddedSuggestions: analysisResults.valueAddedSuggestions || []
+        }
+      };
+
+      console.log('📤 Saving analysis with data:', {
+        jobTitle: requestBody.jobTitle,
+        industry: requestBody.industry,
+        companyName: requestBody.companyName,
+        hourlyRate: requestBody.hourlyRate,
+        hasDeliverables: requestBody.analysisData.deliverables?.length > 0
+      });
+      
+      const response = await fetch(`${apiUrl}/api/aiva/analyses`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include session cookies
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Handle validation errors array
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map(err => 
+            `${err.param || 'Field'}: ${err.msg || 'Invalid value'}`
+          ).join(', ');
+          throw new Error(`Validation failed: ${errorMessages}`);
+        }
+        throw new Error(errorData.error || `Failed to save analysis (${response.status})`);
+      }
+
+      const data = await response.json();
+      setSavedAnalysisId(data.analysis?.id);
+      console.log('✅ Analysis saved:', data.analysis?.id);
+
+    } catch (error) {
+      console.error('❌ Error saving analysis:', error);
+      setSaveError(error.message || 'Failed to save analysis');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAdditionalImpactAnswer = (deliverableId, questionId, answer) => {
@@ -912,7 +1002,40 @@ export default function VoiceROICalculator() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Your AI Voice Impact Report</h1>
-            <p className="text-xl text-gray-600">{analysisResults.jobTitle} • {analysisResults.industry} • ${analysisResults.hourlyRate}/hr</p>
+            <p className="text-xl text-gray-600 mb-4">{analysisResults.jobTitle} • {analysisResults.industry} • ${analysisResults.hourlyRate}/hr</p>
+            
+            {/* Save Analysis Button */}
+            <div className="flex justify-center gap-4 flex-wrap">
+              {!savedAnalysisId ? (
+                <button
+                  onClick={saveAnalysis}
+                  disabled={isSaving}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    isSaving
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  <Save className="w-5 h-5" />
+                  {isSaving ? 'Saving...' : 'Save Analysis'}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 px-6 py-3 rounded-lg bg-green-100 text-green-800 font-semibold">
+                  <Check className="w-5 h-5" />
+                  Analysis Saved
+                </div>
+              )}
+              <button
+                onClick={() => navigate('/analyses')}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition-colors"
+              >
+                <FileText className="w-5 h-5" />
+                View All Analyses
+              </button>
+              {saveError && (
+                <div className="text-red-600 text-sm mt-2 w-full text-center">{saveError}</div>
+              )}
+            </div>
           </div>
 
           {analysisResults.companyContext && (

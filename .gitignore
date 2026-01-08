@@ -70,3 +70,6 @@ Thumbs.db
 
 # Build files
 *.tsbuildinfo
+RENDER_ENV_VALUES.txt
+*.env
+.env*
