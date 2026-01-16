@@ -56,15 +56,25 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "*"], // Allow iframes
+      frameAncestors: ["*"], // Allow embedding in any parent frame
     },
   },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
     preload: true
-  }
+  },
+  frameguard: false // Disable X-Frame-Options header (we'll set it manually)
 }));
+
+// Add iframe headers middleware - allows embedding in iframes
+app.use((req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  // CSP frame-ancestors is already set in Helmet config above
+  next();
+});
 
 // Force browsers to not cache CSP headers by adding cache-control
 app.use((req, res, next) => {
