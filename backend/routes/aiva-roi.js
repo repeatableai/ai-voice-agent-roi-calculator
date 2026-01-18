@@ -362,7 +362,7 @@ router.post('/generate-voice-agent-content', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 16000,
       temperature: 0.7,
       messages: [{
@@ -436,7 +436,7 @@ router.post('/research-role-deliverables', async (req, res) => {
     const prompt = buildDeliverableResearchPrompt({ jobTitle, industry, companyName, hourlyRate });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 8000,
       temperature: 0.7,
       messages: [{
@@ -510,7 +510,7 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
     let message;
     try {
       message = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 16000,
         temperature: 0.7,
         messages: [{
@@ -1515,7 +1515,7 @@ async function generateFrustrationDeliverable({ frustration, jobTitle, industry,
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 4000,
       temperature: 0.7,
       messages: [{
