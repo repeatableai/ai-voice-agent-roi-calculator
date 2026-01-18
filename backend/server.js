@@ -618,6 +618,17 @@ async function startServer() {
       logInfo(`💚 Health check at http://localhost:${PORT}/health`);
     });
 
+    // Configure server timeouts for long-running AI generation requests
+    // Render allows up to 100 minutes, so we set a generous timeout
+    // This allows parallel API calls to complete without timing out
+    server.timeout = 600000; // 10 minutes (600,000ms) - enough for parallel deliverable generation
+    server.keepAliveTimeout = 65000; // 65 seconds - keep connections alive longer
+    server.headersTimeout = 66000; // 66 seconds - must be > keepAliveTimeout
+    
+    logInfo(`⏱️  Server timeout configured: ${server.timeout}ms (10 minutes)`);
+    logInfo(`⏱️  Keep-alive timeout: ${server.keepAliveTimeout}ms`);
+    logInfo(`⏱️  Headers timeout: ${server.headersTimeout}ms`);
+
   } catch (error) {
     logError('Failed to start server:', error);
     process.exit(1);
