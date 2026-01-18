@@ -12,57 +12,106 @@ test.describe('AIVA ROI Calculator E2E', () => {
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
     
-    // Check that the ROI calculator form is visible
-    const jobTitleInput = page.locator('input[name="jobTitle"], input[placeholder*="Job Title"], input[placeholder*="job title"]').first();
-    await expect(jobTitleInput).toBeVisible({ timeout: 10000 });
+    // Wait for page to be fully loaded
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000); // Wait for React to render
     
-    // Fill in the form
-    await jobTitleInput.fill('Financial Analyst');
+    // Check that the ROI calculator form is visible - look for select elements
+    const jobTitleSelect = page.locator('select').filter({ hasText: /Job Title|Financial Analyst|Operations Manager/ }).first();
+    await expect(jobTitleSelect).toBeVisible({ timeout: 15000 });
     
-    // Find and fill industry
-    const industryInput = page.locator('input[name="industry"], input[placeholder*="Industry"], select[name="industry"]').first();
-    await industryInput.fill('Financial Services');
+    // Fill in the form - select job title
+    await jobTitleSelect.selectOption('Financial Analyst');
     
-    // Find and fill company name
-    const companyInput = page.locator('input[name="companyName"], input[placeholder*="Company"], input[placeholder*="company"]').first();
+    // Find and select industry
+    const industrySelect = page.locator('select').filter({ hasText: /Industry|Financial Services|Technology/ }).first();
+    await industrySelect.selectOption('Financial Services');
+    
+    // Find and fill company name - look for input with placeholder containing "company" or "Acme"
+    const companyInput = page.locator('input[placeholder*="company"], input[placeholder*="Acme"], input[placeholder*="Manufacturing"]').first();
     await companyInput.fill('Test Company');
     
-    // Find and fill hourly rate if present
-    const hourlyRateInput = page.locator('input[name="hourlyRate"], input[type="number"]').first();
-    if (await hourlyRateInput.isVisible()) {
-      await hourlyRateInput.fill('50');
+    // Select company size
+    const companySizeSelect = page.locator('select').filter({ hasText: /Company Size|1-10|11-50/ }).first();
+    await companySizeSelect.selectOption('11-50 employees');
+    
+    // Find and fill salary amount - look for number input with $ sign or placeholder with numbers
+    const salaryInput = page.locator('input[type="number"][placeholder*="85000"], input[type="number"][placeholder*="45"]').first();
+    await salaryInput.fill('100000');
+    
+    // Wait a bit for form to update
+    await page.waitForTimeout(1000);
+    
+    // Look for submit/calculate button - look for "Analyze" or "Calculate" text
+    const submitButton = page.locator('button:has-text("Calculate My AI Voice Impact"), button:has-text("Analyze"), button:has-text("Calculate")').first();
+    
+    // Check if button is enabled
+    const isEnabled = await submitButton.isEnabled();
+    if (!isEnabled) {
+      // Check what's missing
+      const pageText = await page.textContent('body');
+      console.log('Form state - button disabled. Page content:', pageText.substring(0, 2000));
+      throw new Error('Submit button is disabled - required fields may be missing');
     }
     
-    // Look for submit/calculate button
-    const submitButton = page.locator('button[type="submit"], button:has-text("Calculate"), button:has-text("Generate"), button:has-text("Submit")').first();
-    
-    // Click submit
-    await submitButton.click();
+    // Click submit and wait for navigation or API call
+    await Promise.all([
+      page.waitForResponse(response => 
+        response.url().includes('/api/aiva/generate-deliverable-content') && response.status() === 200,
+        { timeout: 120000 }
+      ).catch(() => null), // Don't fail if response doesn't come
+      submitButton.click()
+    ]);
     
     // Wait for results - look for deliverables or results section
     // This might take a while due to AI generation
-    await page.waitForSelector(
-      '[class*="deliverable"], [class*="result"], [class*="card"], [data-testid*="deliverable"], [data-testid*="result"]',
-      { timeout: 120000 }
-    ).catch(() => {
-      // If selector not found, check for error messages
-      const errorElement = page.locator('[class*="error"], [role="alert"]').first();
-      if (errorElement.isVisible()) {
-        throw new Error('Error occurred during calculation');
+    try {
+      await page.waitForSelector(
+        '[class*="deliverable"], [class*="result"], [class*="card"], [data-testid*="deliverable"], [data-testid*="result"], text=/ROI/i, text=/hours/i, text=/freed/i',
+        { timeout: 120000 }
+      );
+    } catch (timeoutError) {
+      // Check for error messages
+      const errorElement = page.locator('[class*="error"], [role="alert"], text=/500/, text=/Internal Server Error/, text=/Error/i').first();
+      const hasError = await errorElement.isVisible().catch(() => false);
+      
+      if (hasError) {
+        const errorText = await errorElement.textContent().catch(() => 'Unknown error');
+        const pageText = await page.textContent('body').catch(() => '');
+        console.log('Page content:', pageText.substring(0, 1000));
+        throw new Error(`Error displayed: ${errorText}`);
       }
-    });
+      
+      // Check console for errors
+      const consoleErrors = [];
+      page.on('console', msg => {
+        if (msg.type() === 'error') {
+          consoleErrors.push(msg.text());
+        }
+      });
+      
+      if (consoleErrors.length > 0) {
+        console.log('Console errors:', consoleErrors);
+      }
+      
+      // Take a screenshot for debugging
+      await page.screenshot({ path: 'test-results/error-screenshot.png', fullPage: true });
+      throw new Error('Timeout waiting for results. Check screenshot at test-results/error-screenshot.png');
+    }
     
     // Verify we got results (not an error)
-    const errorMessage = page.locator('[class*="error"], [role="alert"], text=/500/, text=/Internal Server Error/').first();
+    const errorMessage = page.locator('text=/500/, text=/Internal Server Error/, text=/Failed to generate/').first();
     const hasError = await errorMessage.isVisible().catch(() => false);
     
     if (hasError) {
       const errorText = await errorMessage.textContent();
+      const pageText = await page.textContent('body');
+      console.log('Error page content:', pageText.substring(0, 2000));
       throw new Error(`Error displayed: ${errorText}`);
     }
     
     // Check that deliverables or results are shown
-    const resultsVisible = await page.locator('text=/deliverable/i, text=/ROI/i, text=/hours/i, [class*="result"]').first().isVisible().catch(() => false);
+    const resultsVisible = await page.locator('text=/deliverable/i, text=/ROI/i, text=/hours/i, text=/freed/i, [class*="result"]').first().isVisible().catch(() => false);
     expect(resultsVisible).toBe(true);
   });
 
