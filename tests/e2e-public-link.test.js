@@ -196,13 +196,20 @@ test.describe('AIVA ROI Calculator - Public Link E2E Test', () => {
         console.log(`📊 API Response Status: ${apiStatus}`);
         
         if (apiStatus >= 400) {
-          // Log error but don't fail yet - check if page shows results
+          // Log error details to help debug
           try {
             const errorData = await apiResponse.json();
-            console.error('⚠️ API Error Response (but checking if page works):', errorData);
+            console.error('⚠️ API Error Response:', JSON.stringify(errorData, null, 2));
+            console.error('⚠️ Error message:', errorData.error || errorData.message || 'No error message');
+            console.error('⚠️ Error type:', errorData.type || 'Unknown');
+            console.error('⚠️ Error code:', errorData.code || 'Unknown');
+            console.error('⚠️ Error details:', errorData.details || 'No details');
+            if (errorData.stack) {
+              console.error('⚠️ Error stack (first 500 chars):', errorData.stack.substring(0, 500));
+            }
           } catch (parseError) {
             const errorText = await apiResponse.text().catch(() => 'Could not read error response');
-            console.error('⚠️ API Error Text (but checking if page works):', errorText.substring(0, 200));
+            console.error('⚠️ API Error Text (could not parse JSON):', errorText.substring(0, 500));
           }
         }
       } catch (waitError) {
