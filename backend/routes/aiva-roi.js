@@ -277,7 +277,9 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
       status: error.status,
       statusCode: error.statusCode,
       code: error.code,
-      cause: error.cause
+      cause: error.cause,
+      response: error.response?.data || error.response || 'No response',
+      errorType: error.constructor?.name
     });
     console.error('❌ Request body:', JSON.stringify(req.body, null, 2));
     
@@ -300,13 +302,24 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
       statusCode = 503;
     }
     
-    res.status(statusCode).json({
+    // Return detailed error in development, simplified in production
+    const errorResponse = {
       error: 'Failed to generate deliverable content',
       details: errorMessage,
       type: error.name || 'UnknownError',
-      status: error.status || error.statusCode || statusCode,
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-    });
+      status: error.status || error.statusCode || statusCode
+    };
+    
+    // Include more details in production for debugging (but not full stack)
+    if (process.env.NODE_ENV === 'production') {
+      errorResponse.errorCode = error.code || 'UNKNOWN';
+      if (error.status) errorResponse.apiStatus = error.status;
+      if (error.response?.data) errorResponse.apiResponse = error.response.data;
+    } else {
+      errorResponse.stack = error.stack;
+    }
+    
+    res.status(statusCode).json(errorResponse);
   }
 });
 
