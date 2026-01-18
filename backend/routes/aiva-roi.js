@@ -227,7 +227,9 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           index: e.index,
           title: e.title,
           error: e.error,
-          fullError: e.fullError?.message || (e.fullError instanceof Error ? e.fullError.message : String(e.fullError || ''))
+          fullError: typeof e.fullError === 'object' && e.fullError !== null 
+            ? (e.fullError.message || JSON.stringify(e.fullError))
+            : String(e.fullError || '')
         })),
         model: ANTHROPIC_MODEL,
         hasApiKey: !!process.env.ANTHROPIC_API_KEY,
@@ -251,7 +253,9 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           index: e.index,
           title: e.title,
           error: e.error,
-          fullError: e.fullError?.message || (e.fullError instanceof Error ? e.fullError.message : String(e.fullError || ''))
+          fullError: typeof e.fullError === 'object' && e.fullError !== null 
+            ? (e.fullError.message || JSON.stringify(e.fullError))
+            : String(e.fullError || '')
         }))
       })
     };
@@ -327,7 +331,24 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     }
 
     // Return generated content with error information
-    res.json(response);
+    try {
+      res.json(response);
+    } catch (jsonError) {
+      console.error('❌ [ROUTE] Failed to serialize response:', jsonError);
+      console.error('❌ [ROUTE] Response object keys:', Object.keys(response));
+      console.error('❌ [ROUTE] Deliverables count:', response.deliverables?.length);
+      // Fallback: send minimal response
+      res.status(200).json({
+        success: response.success,
+        deliverables: response.deliverables.map(d => ({
+          title: d.title,
+          error: d.error || false,
+          ...(d.error ? { errorMessage: d.errorMessage } : {})
+        })),
+        ...(response.errors && { errors: response.errors }),
+        ...(response.warning && { warning: response.warning })
+      });
+    }
 
   } catch (error) {
     console.error('❌ [ROUTE] TOP LEVEL ERROR CAUGHT:');
