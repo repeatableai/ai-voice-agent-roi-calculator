@@ -31,6 +31,104 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 /**
+ * Sanitize object to ensure it's JSON-serializable
+ * Removes functions, undefined values, and circular references
+ */
+function sanitizeForJSON(obj) {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
+    return obj;
+  }
+  
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  
+  if (obj instanceof Error) {
+    return {
+      message: obj.message,
+      name: obj.name,
+      stack: obj.stack,
+      ...(obj.status && { status: obj.status }),
+      ...(obj.statusCode && { statusCode: obj.statusCode }),
+      ...(obj.code && { code: obj.code })
+    };
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForJSON(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    const seen = new WeakSet();
+    
+    function sanitizeRecursive(value, depth = 0) {
+      if (depth > 10) return '[Max depth reached]'; // Prevent infinite recursion
+      
+      if (value === null || value === undefined) {
+        return null;
+      }
+      
+      if (typeof value === 'function') {
+        return '[Function]';
+      }
+      
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return value;
+      }
+      
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+      
+      if (value instanceof Error) {
+        return {
+          message: value.message,
+          name: value.name,
+          stack: value.stack,
+          ...(value.status && { status: value.status }),
+          ...(value.statusCode && { statusCode: value.statusCode }),
+          ...(value.code && { code: value.code })
+        };
+      }
+      
+      if (Array.isArray(value)) {
+        return value.map(item => sanitizeRecursive(item, depth + 1));
+      }
+      
+      if (typeof value === 'object') {
+        if (seen.has(value)) {
+          return '[Circular Reference]';
+        }
+        seen.add(value);
+        
+        const result = {};
+        for (const key in value) {
+          if (value.hasOwnProperty(key)) {
+            try {
+              result[key] = sanitizeRecursive(value[key], depth + 1);
+            } catch (e) {
+              result[key] = '[Serialization Error]';
+            }
+          }
+        }
+        return result;
+      }
+      
+      return String(value);
+    }
+    
+    return sanitizeRecursive(obj);
+  }
+  
+  return String(obj);
+}
+
+/**
  * POST /api/aiva/generate-deliverable-content
  * Generates comprehensive, personalized content for all 5 deliverables
  * Public endpoint - no authentication required
@@ -182,7 +280,9 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        generatedDeliverables.push(result.value);
+        // Sanitize the deliverable before adding to ensure JSON serializability
+        const sanitizedDeliverable = sanitizeForJSON(result.value);
+        generatedDeliverables.push(sanitizedDeliverable);
       } else {
         const deliverable = allDeliverables[index];
         const errorMessage = result.reason?.message || 'Unknown error';
@@ -205,11 +305,13 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           fullError: serializableError
         });
         // Include the original deliverable with error flag so frontend can handle it
-        generatedDeliverables.push({
+        // Sanitize the deliverable to ensure JSON serializability
+        const sanitizedErrorDeliverable = sanitizeForJSON({
           ...deliverable,
           error: true,
           errorMessage: errorMessage
         });
+        generatedDeliverables.push(sanitizedErrorDeliverable);
       }
     });
 
@@ -220,7 +322,7 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     if (errors.length === allDeliverables.length && errors.length > 0) {
       console.error('❌ [RESULT] ALL deliverables failed to generate');
       const firstError = errors[0];
-      return res.status(500).json({
+      const errorResponse = {
         error: 'All deliverables failed to generate',
         details: firstError.error || 'Unknown error',
         errors: errors.map(e => ({
@@ -235,7 +337,10 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         hasApiKey: !!process.env.ANTHROPIC_API_KEY,
         totalDeliverables: allDeliverables.length,
         failedCount: errors.length
-      });
+      };
+      // Sanitize before sending
+      const sanitizedErrorResponse = sanitizeForJSON(errorResponse);
+      return res.status(500).json(sanitizedErrorResponse);
     }
 
     // Prepare response - return 200 with partial results if some succeeded
@@ -331,23 +436,36 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     }
 
     // Return generated content with error information
+    // Sanitize the entire response object before sending to ensure JSON serializability
     try {
-      res.json(response);
+      const sanitizedResponse = sanitizeForJSON(response);
+      res.json(sanitizedResponse);
     } catch (jsonError) {
       console.error('❌ [ROUTE] Failed to serialize response:', jsonError);
       console.error('❌ [ROUTE] Response object keys:', Object.keys(response));
       console.error('❌ [ROUTE] Deliverables count:', response.deliverables?.length);
-      // Fallback: send minimal response
-      res.status(200).json({
-        success: response.success,
-        deliverables: response.deliverables.map(d => ({
-          title: d.title,
-          error: d.error || false,
-          ...(d.error ? { errorMessage: d.errorMessage } : {})
-        })),
-        ...(response.errors && { errors: response.errors }),
-        ...(response.warning && { warning: response.warning })
-      });
+      // Fallback: send minimal response with aggressive sanitization
+      try {
+        const minimalResponse = {
+          success: response.success,
+          deliverables: (response.deliverables || []).map(d => ({
+            title: d?.title || 'Unknown',
+            error: d?.error || false,
+            ...(d?.error && d?.errorMessage ? { errorMessage: String(d.errorMessage) } : {})
+          })),
+          ...(response.errors && { errors: sanitizeForJSON(response.errors) }),
+          ...(response.warning && { warning: String(response.warning) })
+        };
+        res.status(200).json(minimalResponse);
+      } catch (fallbackError) {
+        console.error('❌ [ROUTE] Fallback serialization also failed:', fallbackError);
+        res.status(500).json({
+          error: 'Failed to generate response',
+          details: 'Response serialization failed',
+          model: ANTHROPIC_MODEL,
+          hasApiKey: !!process.env.ANTHROPIC_API_KEY
+        });
+      }
     }
 
   } catch (error) {
@@ -414,14 +532,16 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     if (error.stack) errorResponse.stack = error.stack;
     
     try {
-      res.status(statusCode).json(errorResponse);
+      // Sanitize error response before sending
+      const sanitizedErrorResponse = sanitizeForJSON(errorResponse);
+      res.status(statusCode).json(sanitizedErrorResponse);
     } catch (jsonError) {
       console.error('❌ [ROUTE] Failed to serialize error response:', jsonError);
       console.error('❌ [ROUTE] JSON error:', jsonError.message);
       // Fallback: send minimal error response
       res.status(500).json({
         error: 'Failed to generate deliverable content',
-        details: errorMessage,
+        details: String(errorMessage || 'Unknown error'),
         model: ANTHROPIC_MODEL,
         hasApiKey: !!process.env.ANTHROPIC_API_KEY
       });
