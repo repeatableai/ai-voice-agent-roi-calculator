@@ -241,7 +241,9 @@ router.post('/logout', (req, res) => {
 router.get('/me', async (req, res, next) => {
   try {
     if (!req.session?.userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
+      // Return 200 with null user instead of 401 to avoid console errors
+      // Frontend handles null user as "not authenticated"
+      return res.status(200).json({ user: null });
     }
 
     const result = await db.query(
@@ -251,7 +253,7 @@ router.get('/me', async (req, res, next) => {
 
     if (result.rows.length === 0) {
       req.session.destroy();
-      return res.status(401).json({ error: 'User not found' });
+      return res.status(200).json({ user: null });
     }
 
     res.json({ user: result.rows[0] });

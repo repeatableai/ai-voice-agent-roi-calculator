@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const db = require('../db/database');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 // Initialize Anthropic client
 let anthropic;
@@ -29,8 +29,9 @@ if (!process.env.ANTHROPIC_API_KEY) {
 /**
  * POST /api/aiva/generate-deliverable-content
  * Generates comprehensive, personalized content for all 5 deliverables
+ * Public endpoint - no authentication required
  */
-router.post('/generate-deliverable-content', requireAuth, async (req, res) => {
+router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
   try {
     const {
       jobTitle,

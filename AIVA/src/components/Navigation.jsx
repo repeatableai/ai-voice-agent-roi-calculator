@@ -24,12 +24,17 @@ export default function Navigation() {
 
   // Define navigation items based on role
   const getNavItems = () => {
-    if (!user) return [];
-
+    // Calculator is always available (public)
     const baseItems = [
       { path: '/', label: 'ROI Calculator', icon: Calculator },
-      { path: '/analyses', label: user.role === 'user' ? 'My Analyses' : user.role === 'admin' ? 'Company Analyses' : 'My Analyses', icon: FileText },
     ];
+
+    // Only show other items if user is authenticated
+    if (!user) return baseItems;
+
+    baseItems.push(
+      { path: '/analyses', label: user.role === 'user' ? 'My Analyses' : user.role === 'admin' ? 'Company Analyses' : 'My Analyses', icon: FileText }
+    );
 
     // Company Dashboard only for admin (not super_admin, they have "All Companies" instead)
     if (user.role === 'admin') {
@@ -87,27 +92,28 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* User Menu */}
+          {/* User Menu / Login */}
           <div className="flex items-center">
-            {/* Desktop User Menu */}
-            <div className="hidden md:block relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-semibold text-gray-900">{user?.email}</div>
-                    <div className="text-xs text-gray-500">
-                      {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'User'}
+            {user ? (
+              /* Desktop User Menu */
+              <div className="hidden md:block relative">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-blue-600" />
                     </div>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-gray-900">{user?.email}</div>
+                      <div className="text-xs text-gray-500">
+                        {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'User'}
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                </div>
-              </button>
+                </button>
 
               {/* User Dropdown */}
               {userMenuOpen && (
@@ -135,7 +141,16 @@ export default function Navigation() {
                   </div>
                 </>
               )}
-            </div>
+              </div>
+            ) : (
+              /* Login Button */
+              <Link
+                to="/login"
+                className="hidden md:flex items-center px-4 py-2 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -169,24 +184,37 @@ export default function Navigation() {
                   </Link>
                 );
               })}
-              <div className="border-t border-gray-200 mt-4 pt-4">
-                <div className="px-4 py-2">
-                  <p className="text-sm font-semibold text-gray-900">{user?.email}</p>
-                  <p className="text-xs text-gray-500">
-                    {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'User'}
-                  </p>
+              {user && (
+                <div className="border-t border-gray-200 mt-4 pt-4">
+                  <div className="px-4 py-2">
+                    <p className="text-sm font-semibold text-gray-900">{user?.email}</p>
+                    <p className="text-xs text-gray-500">
+                      {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'admin' ? 'Admin' : 'User'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 mt-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <LogOut className="w-5 h-5 mr-3" />
+                    Logout
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full flex items-center px-4 py-3 mt-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <LogOut className="w-5 h-5 mr-3" />
-                  Logout
-                </button>
-              </div>
+              )}
+              {!user && (
+                <div className="border-t border-gray-200 mt-4 pt-4">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-base font-medium text-blue-600 hover:bg-blue-50"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}

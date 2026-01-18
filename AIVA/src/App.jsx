@@ -56,17 +56,17 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<LoginRoute />} />
 
-          {/* Protected Routes */}
+          {/* Public Routes */}
           <Route
             path="/"
             element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <VoiceROICalculator />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
+              <AuthenticatedLayout>
+                <VoiceROICalculator />
+              </AuthenticatedLayout>
             }
           />
+
+          {/* Protected Routes */}
 
           <Route
             path="/analyses"

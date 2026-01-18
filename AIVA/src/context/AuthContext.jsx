@@ -19,9 +19,10 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user || data);
+        // Handle null user (not authenticated) or user object
+        setUser(data.user ?? null);
       } else if (response.status === 401) {
-        // 401 is expected when not logged in - silently handle it
+        // Legacy 401 handling (shouldn't happen with new endpoint, but keep for compatibility)
         setUser(null);
       } else {
         // Other errors (500, 403, etc.) should be logged
