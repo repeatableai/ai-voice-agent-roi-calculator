@@ -438,7 +438,7 @@ router.get('/test-anthropic', async (req, res) => {
       message: 'Anthropic API is working',
       response: testMessage.content[0].text,
       apiKeyConfigured: true,
-      model: 'claude-3-5-sonnet-20241022'
+      model: 'claude-3-5-sonnet-20240620'
     });
   } catch (error) {
     res.status(500).json({
