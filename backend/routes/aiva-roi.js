@@ -469,11 +469,36 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     // Return generated content with error information
     // Use direct JSON.stringify with try-catch as final safety net
     try {
+      // Log response details BEFORE attempting to send
+      console.log('📦 [RESPONSE] Preparing to send response...');
+      console.log('📦 [RESPONSE] Deliverables count:', response.deliverables?.length);
+      console.log('📦 [RESPONSE] Success:', response.success);
+      console.log('📦 [RESPONSE] Errors count:', errors.length);
+      
+      // Estimate response size BEFORE serialization
+      let responseSizeEstimate = 0;
+      try {
+        const testString = JSON.stringify(response);
+        responseSizeEstimate = Buffer.byteLength(testString, 'utf8');
+        console.log('📦 [RESPONSE] Estimated size:', responseSizeEstimate, 'bytes (', (responseSizeEstimate / 1024 / 1024).toFixed(2), 'MB)');
+      } catch (sizeError) {
+        console.warn('⚠️ [RESPONSE] Could not estimate size:', sizeError.message);
+      }
+      
       // Try sanitization first
       let sanitizedResponse;
       try {
+        console.log('📦 [RESPONSE] Attempting sanitization...');
         sanitizedResponse = sanitizeForJSON(response);
+        console.log('📦 [RESPONSE] Sanitization successful');
+        
+        // Set headers before sending
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('X-Response-Size', responseSizeEstimate.toString());
+        
+        console.log('📦 [RESPONSE] Sending response...');
         res.json(sanitizedResponse);
+        console.log('✅ [RESPONSE] Response sent successfully!');
       } catch (sanitizeError) {
         console.error('❌ [ROUTE] Sanitization failed, using direct JSON.stringify:', sanitizeError.message);
         // Fallback: try direct JSON.stringify with replacer

@@ -7,6 +7,7 @@ const RedisStore = require('connect-redis').default;
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const { createClient } = require('redis');
 const path = require('path');
 const fs = require('fs');
@@ -120,11 +121,29 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ===================================
+// Compression Middleware
+// ===================================
+
+// Enable gzip compression for large responses (critical for deliverable content)
+app.use(compression({
+  level: 6, // Compression level (1-9, 6 is good balance)
+  threshold: 1024, // Only compress responses > 1KB
+  filter: (req, res) => {
+    // Compress JSON responses (especially large ones)
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// ===================================
 // Request Parsing
 // ===================================
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Increase JSON limit for large deliverable responses
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ===================================
 // Response Timeout Configuration
