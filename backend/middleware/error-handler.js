@@ -122,21 +122,24 @@ function errorHandler(err, req, res, next) {
     body: req.body ? JSON.stringify(req.body).substring(0, 1000) : 'No body'
   });
   
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Internal server error'
-    : err.message;
+  // ALWAYS include error message in response for API routes to help debug
+  const message = err.message || 'Internal server error';
 
-  // In production, still return detailed error for API routes to help debug
+  // For API routes, always return detailed error (even in production for debugging)
   if (req.path.startsWith('/api')) {
     res.status(statusCode).json({
       error: message,
       type: err.name || 'UnknownError',
       code: err.code || 'UNKNOWN',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+      details: err.message,
+      ...(err.stack && { stack: err.stack.substring(0, 500) }) // First 500 chars of stack
     });
   } else {
+    const safeMessage = process.env.NODE_ENV === 'production'
+      ? 'Internal server error'
+      : message;
     res.status(statusCode).json({
-      error: message,
+      error: safeMessage,
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
   }
