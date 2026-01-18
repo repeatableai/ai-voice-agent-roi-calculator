@@ -188,11 +188,21 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         const errorMessage = result.reason?.message || 'Unknown error';
         console.error(`❌ [RESULT] Failed to generate deliverable #${index + 1} "${deliverable?.title || 'Unknown'}":`, errorMessage);
         console.error(`❌ [RESULT] Full error:`, result.reason);
+        
+        // Extract serializable error properties to prevent JSON.stringify crashes
+        const serializableError = result.reason instanceof Error ? {
+          message: result.reason.message,
+          name: result.reason.name,
+          status: result.reason.status,
+          statusCode: result.reason.statusCode,
+          code: result.reason.code
+        } : (result.reason ? String(result.reason) : null);
+        
         errors.push({
           index: index + 1,
           title: deliverable?.title || 'Unknown',
           error: errorMessage,
-          fullError: result.reason
+          fullError: serializableError
         });
         // Include the original deliverable with error flag so frontend can handle it
         generatedDeliverables.push({
