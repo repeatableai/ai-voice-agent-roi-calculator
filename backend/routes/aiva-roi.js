@@ -281,8 +281,35 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         // Sanitize the deliverable before adding to ensure JSON serializability
-        const sanitizedDeliverable = sanitizeForJSON(result.value);
-        generatedDeliverables.push(sanitizedDeliverable);
+        try {
+          const sanitizedDeliverable = sanitizeForJSON(result.value);
+          generatedDeliverables.push(sanitizedDeliverable);
+        } catch (sanitizeError) {
+          console.error(`❌ [RESULT] Failed to sanitize deliverable #${index + 1}:`, sanitizeError);
+          // Fallback: create minimal deliverable with just the essential fields
+          try {
+            const minimalDeliverable = {
+              title: result.value?.title || 'Unknown',
+              ...(result.value?.keyActivities && { keyActivities: result.value.keyActivities }),
+              ...(result.value?.successMetrics && { successMetrics: result.value.successMetrics }),
+              ...(result.value?.dependencies && { dependencies: result.value.dependencies }),
+              ...(result.value?.productivityImpact && { productivityImpact: String(result.value.productivityImpact) }),
+              ...(result.value?.emotionalImpact && { emotionalImpact: String(result.value.emotionalImpact) }),
+              ...(result.value?.businessROI && { businessROI: String(result.value.businessROI) }),
+              ...(result.value?.additionalRippleEffects && { additionalRippleEffects: String(result.value.additionalRippleEffects) }),
+              ...(result.value?.compoundingEffect && { compoundingEffect: String(result.value.compoundingEffect) })
+            };
+            generatedDeliverables.push(minimalDeliverable);
+          } catch (fallbackError) {
+            console.error(`❌ [RESULT] Fallback sanitization also failed:`, fallbackError);
+            // Last resort: just the title
+            generatedDeliverables.push({
+              title: result.value?.title || `Deliverable ${index + 1}`,
+              error: true,
+              errorMessage: 'Content generation succeeded but serialization failed'
+            });
+          }
+        }
       } else {
         const deliverable = allDeliverables[index];
         const errorMessage = result.reason?.message || 'Unknown error';
@@ -306,12 +333,22 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         });
         // Include the original deliverable with error flag so frontend can handle it
         // Sanitize the deliverable to ensure JSON serializability
-        const sanitizedErrorDeliverable = sanitizeForJSON({
-          ...deliverable,
-          error: true,
-          errorMessage: errorMessage
-        });
-        generatedDeliverables.push(sanitizedErrorDeliverable);
+        try {
+          const sanitizedErrorDeliverable = sanitizeForJSON({
+            ...deliverable,
+            error: true,
+            errorMessage: errorMessage
+          });
+          generatedDeliverables.push(sanitizedErrorDeliverable);
+        } catch (sanitizeError) {
+          console.error(`❌ [RESULT] Failed to sanitize error deliverable #${index + 1}:`, sanitizeError);
+          // Fallback: minimal error deliverable
+          generatedDeliverables.push({
+            title: deliverable?.title || 'Unknown',
+            error: true,
+            errorMessage: String(errorMessage || 'Unknown error')
+          });
+        }
       }
     });
 
@@ -438,7 +475,33 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     // Return generated content with error information
     // Sanitize the entire response object before sending to ensure JSON serializability
     try {
-      const sanitizedResponse = sanitizeForJSON(response);
+      let sanitizedResponse;
+      try {
+        sanitizedResponse = sanitizeForJSON(response);
+      } catch (sanitizeError) {
+        console.error('❌ [ROUTE] Sanitization failed, using fallback:', sanitizeError);
+        // Fallback: manually construct a safe response
+        sanitizedResponse = {
+          success: response.success,
+          deliverables: (response.deliverables || []).map(d => {
+            try {
+              return sanitizeForJSON(d);
+            } catch (e) {
+              return {
+                title: d?.title || 'Unknown',
+                error: d?.error || false,
+                ...(d?.error && d?.errorMessage ? { errorMessage: String(d.errorMessage) } : {})
+              };
+            }
+          }),
+          ...(response.errors && { errors: Array.isArray(response.errors) ? response.errors.map(e => ({
+            index: e.index,
+            title: String(e.title || 'Unknown'),
+            error: String(e.error || 'Unknown error')
+          })) : [] }),
+          ...(response.warning && { warning: String(response.warning) })
+        };
+      }
       res.json(sanitizedResponse);
     } catch (jsonError) {
       console.error('❌ [ROUTE] Failed to serialize response:', jsonError);
