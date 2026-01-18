@@ -289,19 +289,23 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
     if (error.message?.includes('timeout') || error.code === 'ETIMEDOUT') {
       errorMessage = 'Request timed out. The AI generation is taking too long. Please try again with fewer deliverables.';
       statusCode = 504;
-    } else if (error.message?.includes('API key') || error.message?.includes('authentication')) {
-      errorMessage = 'AI service authentication failed. Please check API key configuration.';
+    } else if (error.message?.includes('API key') || error.message?.includes('authentication') || error.message?.includes('401') || error.status === 401) {
+      errorMessage = 'AI service authentication failed. ANTHROPIC_API_KEY is missing or invalid. Please configure it in Render environment variables.';
       statusCode = 503;
-    } else if (error.message?.includes('rate limit')) {
+    } else if (error.message?.includes('rate limit') || error.status === 429) {
       errorMessage = 'AI service rate limit exceeded. Please try again in a moment.';
       statusCode = 429;
+    } else if (error.status === 500 && error.message?.includes('anthropic')) {
+      errorMessage = 'AI service error. Please check ANTHROPIC_API_KEY configuration in Render.';
+      statusCode = 503;
     }
     
     res.status(statusCode).json({
       error: 'Failed to generate deliverable content',
       details: errorMessage,
       type: error.name || 'UnknownError',
-      status: error.status || error.statusCode || statusCode
+      status: error.status || error.statusCode || statusCode,
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
     });
   }
 });
@@ -490,15 +494,28 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
     console.log(`📡 Making Anthropic API call for deliverable #${index + 1}...`);
     const startTime = Date.now();
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 16000,
-      temperature: 0.7,
-      messages: [{
-        role: 'user',
-        content: prompt
-      }]
-    });
+    let message;
+    try {
+      message = await anthropic.messages.create({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 16000,
+        temperature: 0.7,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      });
+    } catch (apiError) {
+      // Handle Anthropic API errors specifically
+      if (apiError.status === 401 || apiError.message?.includes('authentication') || apiError.message?.includes('API key')) {
+        throw new Error('ANTHROPIC_API_KEY is invalid or missing. Please configure it in Render environment variables.');
+      }
+      if (apiError.status === 429) {
+        throw new Error('Anthropic API rate limit exceeded. Please try again in a moment.');
+      }
+      // Re-throw other errors
+      throw apiError;
+    }
     
     const duration = Date.now() - startTime;
     console.log(`✅ Anthropic API call completed for deliverable #${index + 1} in ${duration}ms`);
