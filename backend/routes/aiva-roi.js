@@ -492,44 +492,110 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         sanitizedResponse = sanitizeForJSON(response);
         console.log('📦 [RESPONSE] Sanitization successful');
         
+        // Check if headers already sent (prevent double-send)
+        if (res.headersSent) {
+          console.error('❌ [RESPONSE] Headers already sent, cannot send response');
+          return;
+        }
+        
         // Set headers before sending
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('X-Response-Size', responseSizeEstimate.toString());
         
         console.log('📦 [RESPONSE] Sending response...');
-        res.json(sanitizedResponse);
-        console.log('✅ [RESPONSE] Response sent successfully!');
+        
+        // Wrap res.json() in try-catch - it can throw errors
+        try {
+          res.json(sanitizedResponse);
+          console.log('✅ [RESPONSE] Response sent successfully!');
+          return; // Success - exit early
+        } catch (jsonSendError) {
+          console.error('❌ [RESPONSE] res.json() threw error:', jsonSendError.message);
+          console.error('❌ [RESPONSE] Error stack:', jsonSendError.stack);
+          
+          // If headers not sent yet, try res.send() with stringified JSON
+          if (!res.headersSent) {
+            try {
+              const jsonString = JSON.stringify(sanitizedResponse);
+              res.setHeader('Content-Type', 'application/json');
+              res.send(jsonString);
+              console.log('✅ [RESPONSE] Response sent via res.send()');
+              return;
+            } catch (sendError) {
+              console.error('❌ [RESPONSE] res.send() also failed:', sendError.message);
+              throw sendError; // Re-throw to outer catch
+            }
+          } else {
+            // Headers already sent, can't send error response
+            console.error('❌ [RESPONSE] Headers already sent, cannot send error');
+            return;
+          }
+        }
       } catch (sanitizeError) {
         console.error('❌ [ROUTE] Sanitization failed, using direct JSON.stringify:', sanitizeError.message);
         // Fallback: try direct JSON.stringify with replacer
         try {
+          if (res.headersSent) {
+            console.error('❌ [ROUTE] Headers already sent, cannot send fallback');
+            return;
+          }
+          
           const directResponse = JSON.stringify(response, (key, value) => {
             if (typeof value === 'function') return '[Function]';
             if (value === undefined) return null;
+            if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) return null;
             if (value instanceof Error) {
               return { message: value.message, name: value.name };
             }
             return value;
           });
+          
           res.setHeader('Content-Type', 'application/json');
-          res.send(directResponse);
+          
+          // Try res.send() - more reliable than res.json() for large payloads
+          try {
+            res.send(directResponse);
+            console.log('✅ [RESPONSE] Fallback response sent via res.send()');
+            return;
+          } catch (sendError) {
+            console.error('❌ [RESPONSE] res.send() failed:', sendError.message);
+            throw sendError;
+          }
         } catch (directError) {
           console.error('❌ [ROUTE] Direct JSON.stringify also failed:', directError.message);
+          
           // Last resort: minimal safe response
-          res.status(200).json({
-            success: Boolean(response.success),
-            deliverables: (response.deliverables || []).slice(0, 10).map(d => ({
-              title: String(d?.title || 'Unknown'),
-              ...(d?.error && { error: true, errorMessage: String(d.errorMessage || 'Error') })
-            })),
-            ...(response.errors && Array.isArray(response.errors) && response.errors.length > 0 ? {
-              errors: response.errors.slice(0, 5).map(e => ({
-                index: Number(e.index) || 0,
-                title: String(e.title || 'Unknown'),
-                error: String(e.error || 'Unknown error')
-              }))
-            } : {})
-          });
+          if (!res.headersSent) {
+            try {
+              const minimalResponse = {
+                success: Boolean(response.success),
+                deliverables: (response.deliverables || []).slice(0, 10).map(d => ({
+                  title: String(d?.title || 'Unknown'),
+                  ...(d?.error && { error: true, errorMessage: String(d.errorMessage || 'Error') })
+                })),
+                ...(response.errors && Array.isArray(response.errors) && response.errors.length > 0 ? {
+                  errors: response.errors.slice(0, 5).map(e => ({
+                    index: Number(e.index) || 0,
+                    title: String(e.title || 'Unknown'),
+                    error: String(e.error || 'Unknown error')
+                  }))
+                } : {})
+              };
+              
+              const minimalJson = JSON.stringify(minimalResponse);
+              res.setHeader('Content-Type', 'application/json');
+              res.status(200).send(minimalJson);
+              console.log('✅ [RESPONSE] Minimal response sent');
+              return;
+            } catch (minimalError) {
+              console.error('❌ [RESPONSE] Even minimal response failed:', minimalError.message);
+              // Can't send response at all
+              return;
+            }
+          } else {
+            console.error('❌ [RESPONSE] Headers already sent, cannot send minimal response');
+            return;
+          }
         }
       }
     } catch (jsonError) {
@@ -537,19 +603,25 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       console.error('❌ [ROUTE] Response object keys:', Object.keys(response));
       console.error('❌ [ROUTE] Deliverables count:', response.deliverables?.length);
       // Fallback: send minimal response with aggressive sanitization
-      try {
-        const minimalResponse = {
-          success: response.success,
-          deliverables: (response.deliverables || []).map(d => ({
-            title: d?.title || 'Unknown',
-            error: d?.error || false,
-            ...(d?.error && d?.errorMessage ? { errorMessage: String(d.errorMessage) } : {})
-          })),
-          ...(response.errors && { errors: sanitizeForJSON(response.errors) }),
-          ...(response.warning && { warning: String(response.warning) })
-        };
-        res.status(200).json(minimalResponse);
-      } catch (fallbackError) {
+      if (!res.headersSent) {
+        try {
+          const minimalResponse = {
+            success: response.success,
+            deliverables: (response.deliverables || []).map(d => ({
+              title: d?.title || 'Unknown',
+              error: d?.error || false,
+              ...(d?.error && d?.errorMessage ? { errorMessage: String(d.errorMessage) } : {})
+            })),
+            ...(response.errors && { errors: sanitizeForJSON(response.errors) }),
+            ...(response.warning && { warning: String(response.warning) })
+          };
+          
+          const minimalJson = JSON.stringify(minimalResponse);
+          res.setHeader('Content-Type', 'application/json');
+          res.status(200).send(minimalJson);
+          console.log('✅ [RESPONSE] Fallback minimal response sent');
+          return;
+        } catch (fallbackError) {
         console.error('❌ [ROUTE] Fallback serialization also failed:', fallbackError);
         res.status(500).json({
           error: 'Failed to generate response',
