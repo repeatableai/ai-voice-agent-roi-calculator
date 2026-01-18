@@ -1075,12 +1075,18 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
  * Build prompt for a single deliverable
  */
 function buildSingleDeliverablePrompt({ deliverable, index, jobTitle, industry, companyName, companyContext }) {
+  // Safely extract companyContext properties, ensuring they're strings and don't break template strings
+  const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
+  const safeProducts = companyContext?.products ? String(companyContext.products).substring(0, 200) : 'Not specified';
+  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 200) : industry;
+  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 200) : 'None found';
+  
   const contextSummary = companyContext ? `
 COMPANY RESEARCH FROM WEBSITE:
-- Company Size: ${companyContext.companySize || 'Not specified'}
-- Products/Services: ${companyContext.products || 'Not specified'}
-- Industry Details: ${companyContext.industry || industry}
-- Recent News: ${companyContext.recentNews || 'None found'}
+- Company Size: ${safeCompanySize}
+- Products/Services: ${safeProducts}
+- Industry Details: ${safeIndustry}
+- Recent News: ${safeRecentNews}
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}
@@ -1255,12 +1261,18 @@ Generate now for this deliverable.`;
  * Build comprehensive prompt for Claude to generate all deliverable content
  */
 function buildComprehensivePrompt({ jobTitle, industry, companyName, companyContext, deliverables }) {
+  // Safely extract companyContext properties, ensuring they're strings and don't break template strings
+  const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
+  const safeProducts = companyContext?.products ? String(companyContext.products).substring(0, 200) : 'Not specified';
+  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 200) : industry;
+  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 200) : 'None found';
+  
   const contextSummary = companyContext ? `
 COMPANY RESEARCH FROM WEBSITE:
-- Company Size: ${companyContext.companySize || 'Not specified'}
-- Products/Services: ${companyContext.products || 'Not specified'}
-- Industry Details: ${companyContext.industry || industry}
-- Recent News: ${companyContext.recentNews || 'None found'}
+- Company Size: ${safeCompanySize}
+- Products/Services: ${safeProducts}
+- Industry Details: ${safeIndustry}
+- Recent News: ${safeRecentNews}
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}

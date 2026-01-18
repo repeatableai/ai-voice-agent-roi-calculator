@@ -1,0 +1,272 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - link "AIVA" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e12]: AIVA
+        - link "ROI Calculator" [ref=e14] [cursor=pointer]:
+          - /url: /
+          - img [ref=e15]
+          - text: ROI Calculator
+      - link "Sign In" [ref=e18] [cursor=pointer]:
+        - /url: /login
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - heading "Your AI Voice Impact Report" [level=1] [ref=e22]
+      - paragraph [ref=e23]: Operations Manager - Manufacturing • Manufacturing • $36.06/hr
+      - generic [ref=e24]:
+        - button "Save Analysis" [ref=e25] [cursor=pointer]:
+          - img [ref=e26]
+          - text: Save Analysis
+        - button "View All Analyses" [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+          - text: View All Analyses
+    - generic [ref=e34]:
+      - heading "Analysis Personalized for Paycor" [level=3] [ref=e35]:
+        - img [ref=e36]
+        - text: Analysis Personalized for Paycor
+      - generic [ref=e44]:
+        - paragraph [ref=e45]:
+          - strong [ref=e46]: "Team Size:"
+          - text: ~49 Employees
+        - paragraph [ref=e47]:
+          - strong [ref=e48]: "Focus:"
+          - text: "Solutions | Empowering Leaders URL Source: https://paycor.com/ Published Time: Fri, 12 Dec 2025 13:17:49 GMT Markdown Content: HR and Payroll Solut..."
+        - paragraph [ref=e49]: This analysis incorporates insights from your website to make scenarios more realistic and contextually relevant to Paycor.
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - 'heading "Operations Manager - Manufacturing Role at Paycor: Harada Deliverable Matrix" [level=2] [ref=e52]'
+        - paragraph [ref=e53]:
+          - text: Core deliverables where AI voice creates transformational impact.
+          - strong [ref=e54]: Click any row
+          - text: to see the full detailed analysis.
+        - generic [ref=e55]:
+          - img [ref=e56]
+          - text: "Interactive: Click any deliverable for deep-dive analysis"
+      - table [ref=e63]:
+        - rowgroup [ref=e64]:
+          - row "# Core Deliverable Key Activities Success Metrics Dependencies" [ref=e65]:
+            - columnheader "#" [ref=e66]
+            - columnheader "Core Deliverable" [ref=e67]
+            - columnheader "Key Activities" [ref=e68]
+            - columnheader "Success Metrics" [ref=e69]
+            - columnheader "Dependencies" [ref=e70]
+        - rowgroup [ref=e71]:
+          - row "1 Production Planning & Schedule Optimization • Core responsibilities • Stakeholder management • Performance optimization • Output quality • Efficiency metrics • Stakeholder satisfaction • Team collaboration • System access • Resource allocation" [ref=e72] [cursor=pointer]:
+            - cell "1" [ref=e73]
+            - cell "Production Planning & Schedule Optimization" [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e77]: Production Planning & Schedule Optimization
+                - img [ref=e78]
+            - cell "• Core responsibilities • Stakeholder management • Performance optimization" [ref=e80]:
+              - list [ref=e81]:
+                - listitem [ref=e82]: • Core responsibilities
+                - listitem [ref=e83]: • Stakeholder management
+                - listitem [ref=e84]: • Performance optimization
+            - cell "• Output quality • Efficiency metrics • Stakeholder satisfaction" [ref=e85]:
+              - list [ref=e86]:
+                - listitem [ref=e87]: • Output quality
+                - listitem [ref=e88]: • Efficiency metrics
+                - listitem [ref=e89]: • Stakeholder satisfaction
+            - cell "• Team collaboration • System access • Resource allocation" [ref=e90]:
+              - list [ref=e91]:
+                - listitem [ref=e92]: • Team collaboration
+                - listitem [ref=e93]: • System access
+                - listitem [ref=e94]: • Resource allocation
+          - row "2 Quality Investigation & Root Cause Analysis • Core responsibilities • Stakeholder management • Performance optimization • Output quality • Efficiency metrics • Stakeholder satisfaction • Team collaboration • System access • Resource allocation" [ref=e95] [cursor=pointer]:
+            - cell "2" [ref=e96]
+            - cell "Quality Investigation & Root Cause Analysis" [ref=e97]:
+              - generic [ref=e98]:
+                - generic [ref=e100]: Quality Investigation & Root Cause Analysis
+                - img [ref=e101]
+            - cell "• Core responsibilities • Stakeholder management • Performance optimization" [ref=e103]:
+              - list [ref=e104]:
+                - listitem [ref=e105]: • Core responsibilities
+                - listitem [ref=e106]: • Stakeholder management
+                - listitem [ref=e107]: • Performance optimization
+            - cell "• Output quality • Efficiency metrics • Stakeholder satisfaction" [ref=e108]:
+              - list [ref=e109]:
+                - listitem [ref=e110]: • Output quality
+                - listitem [ref=e111]: • Efficiency metrics
+                - listitem [ref=e112]: • Stakeholder satisfaction
+            - cell "• Team collaboration • System access • Resource allocation" [ref=e113]:
+              - list [ref=e114]:
+                - listitem [ref=e115]: • Team collaboration
+                - listitem [ref=e116]: • System access
+                - listitem [ref=e117]: • Resource allocation
+          - row "3 Supplier Coordination & Issue Resolution • Core responsibilities • Stakeholder management • Performance optimization • Output quality • Efficiency metrics • Stakeholder satisfaction • Team collaboration • System access • Resource allocation" [ref=e118] [cursor=pointer]:
+            - cell "3" [ref=e119]
+            - cell "Supplier Coordination & Issue Resolution" [ref=e120]:
+              - generic [ref=e121]:
+                - generic [ref=e123]: Supplier Coordination & Issue Resolution
+                - img [ref=e124]
+            - cell "• Core responsibilities • Stakeholder management • Performance optimization" [ref=e126]:
+              - list [ref=e127]:
+                - listitem [ref=e128]: • Core responsibilities
+                - listitem [ref=e129]: • Stakeholder management
+                - listitem [ref=e130]: • Performance optimization
+            - cell "• Output quality • Efficiency metrics • Stakeholder satisfaction" [ref=e131]:
+              - list [ref=e132]:
+                - listitem [ref=e133]: • Output quality
+                - listitem [ref=e134]: • Efficiency metrics
+                - listitem [ref=e135]: • Stakeholder satisfaction
+            - cell "• Team collaboration • System access • Resource allocation" [ref=e136]:
+              - list [ref=e137]:
+                - listitem [ref=e138]: • Team collaboration
+                - listitem [ref=e139]: • System access
+                - listitem [ref=e140]: • Resource allocation
+          - row "4 Team Coaching & Performance Management • Core responsibilities • Stakeholder management • Performance optimization • Output quality • Efficiency metrics • Stakeholder satisfaction • Team collaboration • System access • Resource allocation" [ref=e141] [cursor=pointer]:
+            - cell "4" [ref=e142]
+            - cell "Team Coaching & Performance Management" [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e146]: Team Coaching & Performance Management
+                - img [ref=e147]
+            - cell "• Core responsibilities • Stakeholder management • Performance optimization" [ref=e149]:
+              - list [ref=e150]:
+                - listitem [ref=e151]: • Core responsibilities
+                - listitem [ref=e152]: • Stakeholder management
+                - listitem [ref=e153]: • Performance optimization
+            - cell "• Output quality • Efficiency metrics • Stakeholder satisfaction" [ref=e154]:
+              - list [ref=e155]:
+                - listitem [ref=e156]: • Output quality
+                - listitem [ref=e157]: • Efficiency metrics
+                - listitem [ref=e158]: • Stakeholder satisfaction
+            - cell "• Team collaboration • System access • Resource allocation" [ref=e159]:
+              - list [ref=e160]:
+                - listitem [ref=e161]: • Team collaboration
+                - listitem [ref=e162]: • System access
+                - listitem [ref=e163]: • Resource allocation
+          - row "5 Equipment Maintenance Planning & Downtime Prevention • Core responsibilities • Stakeholder management • Performance optimization • Output quality • Efficiency metrics • Stakeholder satisfaction • Team collaboration • System access • Resource allocation" [ref=e164] [cursor=pointer]:
+            - cell "5" [ref=e165]
+            - cell "Equipment Maintenance Planning & Downtime Prevention" [ref=e166]:
+              - generic [ref=e167]:
+                - generic [ref=e169]: Equipment Maintenance Planning & Downtime Prevention
+                - img [ref=e170]
+            - cell "• Core responsibilities • Stakeholder management • Performance optimization" [ref=e172]:
+              - list [ref=e173]:
+                - listitem [ref=e174]: • Core responsibilities
+                - listitem [ref=e175]: • Stakeholder management
+                - listitem [ref=e176]: • Performance optimization
+            - cell "• Output quality • Efficiency metrics • Stakeholder satisfaction" [ref=e177]:
+              - list [ref=e178]:
+                - listitem [ref=e179]: • Output quality
+                - listitem [ref=e180]: • Efficiency metrics
+                - listitem [ref=e181]: • Stakeholder satisfaction
+            - cell "• Team collaboration • System access • Resource allocation" [ref=e182]:
+              - list [ref=e183]:
+                - listitem [ref=e184]: • Team collaboration
+                - listitem [ref=e185]: • System access
+                - listitem [ref=e186]: • Resource allocation
+      - paragraph [ref=e188]:
+        - strong [ref=e189]: "📊 Harada Matrix Framework:"
+        - text: A structured approach to analyzing role deliverables with activities, metrics, and dependencies. Each row represents a high-impact deliverable where AI voice creates transformational productivity gains for Paycor.
+        - strong [ref=e190]: Click any row to explore the full detailed analysis.
+    - generic [ref=e191]:
+      - generic [ref=e192]:
+        - generic [ref=e193]:
+          - img [ref=e194]
+          - generic [ref=e197]: 8.1x
+        - paragraph [ref=e198]: Productivity Multiplier
+      - generic [ref=e199]:
+        - generic [ref=e200]:
+          - img [ref=e201]
+          - generic [ref=e204]: "1348"
+        - paragraph [ref=e205]: Hours Freed Annually
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - img [ref=e208]
+          - generic [ref=e210]: $48,588
+        - paragraph [ref=e211]: Payroll Freed to Reallocate
+      - generic [ref=e212]:
+        - generic [ref=e213]:
+          - img [ref=e214]
+          - generic [ref=e216]: $160,340
+        - paragraph [ref=e217]: Per Operations Manager - Manufacturing × Headcount ROI
+        - paragraph [ref=e218]: Conservative annual estimate
+    - button "Implementation & Payback Analysis" [ref=e220] [cursor=pointer]:
+      - generic [ref=e221]:
+        - img [ref=e222]
+        - generic [ref=e224]: Implementation & Payback Analysis
+      - img [ref=e225]
+    - generic [ref=e227]:
+      - generic [ref=e228]:
+        - img [ref=e229]
+        - heading "Your Freed Time Portfolio" [level=2] [ref=e233]
+        - paragraph [ref=e234]: 1348 hours freed annually
+        - generic [ref=e235]:
+          - generic [ref=e236]:
+            - generic [ref=e237]: "34"
+            - generic [ref=e238]: Full Work Weeks
+          - generic [ref=e239]:
+            - generic [ref=e240]: $48,609
+            - generic [ref=e241]: Value to Reallocate
+          - generic [ref=e242]:
+            - generic [ref=e243]: 65%
+            - generic [ref=e244]: of Your Year Freed
+      - generic [ref=e245]:
+        - 'heading "💡 The Real Value: What You Can Do With This Time" [level=3] [ref=e246]'
+        - paragraph [ref=e247]: "Instead of spending 1348 hours/year on repetitive tasks, you can reallocate this time to high-impact activities that accelerate your career and drive organizational results:"
+      - generic [ref=e248]:
+        - generic [ref=e249]:
+          - generic [ref=e250]:
+            - heading "1. Strategic Process Improvement Leadership" [level=3] [ref=e251]
+            - generic [ref=e252]: 404h/year
+          - paragraph [ref=e253]: Lead comprehensive lean initiatives and constraint elimination projects
+          - paragraph [ref=e255]: 🚀 $100K-$300K in annual cost reductions, positions you as strategic leader
+          - generic [ref=e256]:
+            - img [ref=e257]
+            - generic [ref=e260]: That's ~8 hours per week you can spend on this
+        - generic [ref=e261]:
+          - generic [ref=e262]:
+            - heading "2. Team Capability Development & AI Enablement" [level=3] [ref=e263]
+            - generic [ref=e264]: 337h/year
+          - paragraph [ref=e265]: Train team on AI workflows, creating 3-5x productivity multiplication
+          - paragraph [ref=e267]: 🚀 Team becomes top-performing, reduces your firefighting by 60%
+          - generic [ref=e268]:
+            - img [ref=e269]
+            - generic [ref=e272]: That's ~6 hours per week you can spend on this
+        - generic [ref=e273]:
+          - generic [ref=e274]:
+            - heading "3. Cross-Functional Collaboration" [level=3] [ref=e275]
+            - generic [ref=e276]: 270h/year
+          - paragraph [ref=e277]: Build relationships to eliminate organizational bottlenecks
+          - paragraph [ref=e279]: 🚀 Accelerates company-wide decisions 30-40%
+          - generic [ref=e280]:
+            - img [ref=e281]
+            - generic [ref=e284]: That's ~5 hours per week you can spend on this
+        - generic [ref=e285]:
+          - generic [ref=e286]:
+            - heading "4. Innovation & Technology Pilots" [level=3] [ref=e287]
+            - generic [ref=e288]: 202h/year
+          - paragraph [ref=e289]: Test emerging technologies for competitive advantage
+          - paragraph [ref=e291]: 🚀 Builds reputation as forward-thinking leader
+          - generic [ref=e292]:
+            - img [ref=e293]
+            - generic [ref=e296]: That's ~4 hours per week you can spend on this
+        - generic [ref=e297]:
+          - generic [ref=e298]:
+            - heading "5. Long-term Strategic Planning" [level=3] [ref=e299]
+            - generic [ref=e300]: 135h/year
+          - paragraph [ref=e301]: Develop 3-5 year capacity plans and risk mitigation
+          - paragraph [ref=e303]: 🚀 Shifts operations from reactive to proactive
+          - generic [ref=e304]:
+            - img [ref=e305]
+            - generic [ref=e308]: That's ~3 hours per week you can spend on this
+      - generic [ref=e309]:
+        - heading "🎯 Bottom Line" [level=3] [ref=e310]
+        - paragraph [ref=e311]:
+          - text: By freeing 1348 hours annually from repetitive work, you shift from being
+          - strong [ref=e312]: tactically busy
+          - text: to being
+          - strong [ref=e313]: strategically impactful
+          - text: . This is how top performers in your role operate—they don't work harder, they work on higher-leverage activities.
+    - generic [ref=e314]:
+      - heading "Ready to Build Your AI Voice Partners?" [level=2] [ref=e315]
+      - paragraph [ref=e316]: You've seen the $48,588 opportunity
+      - button "Analyze Another Role" [ref=e317] [cursor=pointer]
+```

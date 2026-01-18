@@ -344,14 +344,26 @@ export default function VoiceROICalculator() {
       const response = await fetch(jinaURL);
       const markdown = await response.text();
 
-      // Extract key information from the markdown content
+      // Extract key information from the markdown content and ensure all values are strings
       const context = {
-        rawContent: markdown.substring(0, 3000), // First 3000 chars
-        companySize: extractCompanySize(markdown),
-        products: extractProducts(markdown),
-        industry: extractIndustryDetails(markdown),
-        recentNews: extractRecentNews(markdown)
+        rawContent: markdown ? String(markdown).substring(0, 3000) : null, // First 3000 chars, ensure string
+        companySize: extractCompanySize(markdown) ? String(extractCompanySize(markdown)) : null,
+        products: extractProducts(markdown) ? String(extractProducts(markdown)).substring(0, 500) : null,
+        industry: extractIndustryDetails(markdown) ? String(extractIndustryDetails(markdown)).substring(0, 500) : null,
+        recentNews: extractRecentNews(markdown) ? String(extractRecentNews(markdown)).substring(0, 500) : null
       };
+
+      // Remove null values to keep object clean
+      Object.keys(context).forEach(key => {
+        if (context[key] === null) {
+          delete context[key];
+        }
+      });
+
+      // If all values are null/empty, return null
+      if (Object.keys(context).length === 0) {
+        return null;
+      }
 
       return context;
     } catch (error) {
