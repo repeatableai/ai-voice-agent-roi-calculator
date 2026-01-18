@@ -144,11 +144,29 @@ router.post('/login', validateLogin, async (req, res, next) => {
 
     const { email, password } = req.body;
 
+    // Check database connection
+    if (!process.env.DATABASE_URL) {
+      logError('DATABASE_URL not configured');
+      return res.status(503).json({ 
+        error: 'Database not configured',
+        message: 'Please contact support'
+      });
+    }
+
     // Get user from database (include company_id)
-    const result = await db.query(
-      'SELECT id, email, password_hash, name, role, company_id FROM users WHERE email = $1',
-      [email]
-    );
+    let result;
+    try {
+      result = await db.query(
+        'SELECT id, email, password_hash, name, role, company_id FROM users WHERE email = $1',
+        [email]
+      );
+    } catch (dbError) {
+      logError('Database query error during login:', dbError);
+      return res.status(503).json({ 
+        error: 'Database connection failed',
+        message: 'Please try again later'
+      });
+    }
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -157,39 +175,75 @@ router.post('/login', validateLogin, async (req, res, next) => {
     const user = result.rows[0];
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    let isValidPassword;
+    try {
+      isValidPassword = await bcrypt.compare(password, user.password_hash);
+    } catch (bcryptError) {
+      logError('Password comparison error:', bcryptError);
+      return res.status(500).json({ 
+        error: 'Authentication error',
+        message: 'Please try again'
+      });
+    }
 
     if (!isValidPassword) {
       logInfo('Failed login attempt:', { email });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Update last login
-    await db.query(
-      'UPDATE users SET last_login = NOW() WHERE id = $1',
-      [user.id]
-    );
+    // Update last login (non-critical, don't fail if this fails)
+    try {
+      await db.query(
+        'UPDATE users SET last_login = NOW() WHERE id = $1',
+        [user.id]
+      );
+    } catch (updateError) {
+      logError('Failed to update last_login:', updateError);
+      // Continue anyway - not critical
+    }
 
     // Get user's company_id if exists
-    const userCompanyResult = await db.query(
-      'SELECT company_id FROM users WHERE id = $1',
-      [user.id]
-    );
-    const companyId = userCompanyResult.rows[0]?.company_id || null;
+    let companyId = null;
+    try {
+      const userCompanyResult = await db.query(
+        'SELECT company_id FROM users WHERE id = $1',
+        [user.id]
+      );
+      companyId = userCompanyResult.rows[0]?.company_id || null;
+    } catch (companyError) {
+      logError('Failed to get company_id:', companyError);
+      // Continue anyway - company_id is optional
+    }
 
     // Create session
-    req.session.userId = user.id;
-    req.session.email = user.email;
-    req.session.role = user.role;
-    req.session.companyId = companyId;
+    try {
+      req.session.userId = user.id;
+      req.session.email = user.email;
+      req.session.role = user.role;
+      req.session.companyId = companyId;
+    } catch (sessionError) {
+      logError('Session creation error:', sessionError);
+      return res.status(500).json({ 
+        error: 'Session error',
+        message: 'Please try again'
+      });
+    }
 
     // Generate JWT token (optional, for API access)
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      companyId: companyId
-    });
+    let token = null;
+    try {
+      if (process.env.JWT_SECRET) {
+        token = generateToken({
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          companyId: companyId
+        });
+      }
+    } catch (tokenError) {
+      logError('Token generation error:', tokenError);
+      // Continue without token - not critical for login
+    }
 
     logInfo('User logged in:', { email, userId: user.id });
 
@@ -202,11 +256,32 @@ router.post('/login', validateLogin, async (req, res, next) => {
         role: user.role,
         companyId: companyId
       },
-      token
+      ...(token && { token })
     });
 
   } catch (error) {
-    logError('Login error:', error);
+    logError('Login error:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name
+    });
+    
+    // Return more specific error messages
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(503).json({ 
+        error: 'Database connection failed',
+        message: 'Please try again later'
+      });
+    }
+    
+    if (error.code === '42P01') { // Table doesn't exist
+      return res.status(503).json({ 
+        error: 'Database not initialized',
+        message: 'Please contact support'
+      });
+    }
+    
     next(error);
   }
 });
