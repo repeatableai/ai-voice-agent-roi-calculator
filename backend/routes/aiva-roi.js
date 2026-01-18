@@ -31,101 +31,75 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 /**
- * Sanitize object to ensure it's JSON-serializable
- * Removes functions, undefined values, and circular references
+ * Safely serialize object to JSON, handling all edge cases
+ * Uses JSON.stringify with a replacer function - the standard, reliable approach
  */
 function sanitizeForJSON(obj) {
-  if (obj === null || obj === undefined) {
-    return null;
-  }
-  
-  if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean') {
-    return obj;
-  }
-  
-  if (obj instanceof Date) {
-    return obj.toISOString();
-  }
-  
-  if (obj instanceof Error) {
-    return {
-      message: obj.message,
-      name: obj.name,
-      stack: obj.stack,
-      ...(obj.status && { status: obj.status }),
-      ...(obj.statusCode && { statusCode: obj.statusCode }),
-      ...(obj.code && { code: obj.code })
-    };
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeForJSON(item));
-  }
-  
-  if (typeof obj === 'object') {
-    const sanitized = {};
+  try {
     const seen = new WeakSet();
     
-    function sanitizeRecursive(value, depth = 0) {
-      if (depth > 10) return '[Max depth reached]'; // Prevent infinite recursion
-      
-      if (value === null || value === undefined) {
-        return null;
+    return JSON.parse(JSON.stringify(obj, (key, value) => {
+      // Handle circular references
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular Reference]';
+        }
+        seen.add(value);
       }
       
+      // Remove functions
       if (typeof value === 'function') {
         return '[Function]';
       }
       
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        return value;
+      // Remove undefined (JSON.stringify already does this, but be explicit)
+      if (value === undefined) {
+        return null;
       }
       
-      if (value instanceof Date) {
-        return value.toISOString();
-      }
-      
+      // Convert Error objects to plain objects
       if (value instanceof Error) {
         return {
-          message: value.message,
-          name: value.name,
-          stack: value.stack,
+          message: value.message || '',
+          name: value.name || 'Error',
+          ...(value.stack && { stack: value.stack }),
           ...(value.status && { status: value.status }),
           ...(value.statusCode && { statusCode: value.statusCode }),
           ...(value.code && { code: value.code })
         };
       }
       
-      if (Array.isArray(value)) {
-        return value.map(item => sanitizeRecursive(item, depth + 1));
+      // Convert Date to ISO string
+      if (value instanceof Date) {
+        return value.toISOString();
       }
       
-      if (typeof value === 'object') {
-        if (seen.has(value)) {
-          return '[Circular Reference]';
-        }
-        seen.add(value);
-        
-        const result = {};
-        for (const key in value) {
-          if (value.hasOwnProperty(key)) {
-            try {
-              result[key] = sanitizeRecursive(value[key], depth + 1);
-            } catch (e) {
-              result[key] = '[Serialization Error]';
-            }
+      return value;
+    }));
+  } catch (error) {
+    // If serialization fails completely, return a safe fallback
+    console.error('❌ [SANITIZE] JSON serialization failed:', error.message);
+    if (typeof obj === 'object' && obj !== null) {
+      // Try to extract at least some safe properties
+      const safe = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const val = obj[key];
+          if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' || val === null) {
+            safe[key] = val;
+          } else if (Array.isArray(val)) {
+            safe[key] = val.map(item => 
+              (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') ? item : String(item)
+            );
+          } else {
+            safe[key] = String(val);
           }
         }
-        return result;
       }
-      
-      return String(value);
+      return safe;
     }
-    
-    return sanitizeRecursive(obj);
+    return String(obj);
   }
-  
-  return String(obj);
 }
 
 /**
