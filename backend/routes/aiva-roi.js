@@ -308,22 +308,24 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
       statusCode = 503;
     }
     
-    // Return detailed error in development, simplified in production
+    // Return FULL error details - always include everything for debugging
     const errorResponse = {
       error: 'Failed to generate deliverable content',
       details: errorMessage,
       type: error.name || 'UnknownError',
-      status: error.status || error.statusCode || statusCode
+      status: error.status || error.statusCode || statusCode,
+      model: ANTHROPIC_MODEL,
+      fullError: error.message,
+      errorCode: error.code || 'UNKNOWN',
+      hasApiKey: !!process.env.ANTHROPIC_API_KEY
     };
     
-    // Include more details in production for debugging (but not full stack)
-    if (process.env.NODE_ENV === 'production') {
-      errorResponse.errorCode = error.code || 'UNKNOWN';
-      if (error.status) errorResponse.apiStatus = error.status;
-      if (error.response?.data) errorResponse.apiResponse = error.response.data;
-    } else {
-      errorResponse.stack = error.stack;
-    }
+    // Include ALL error details
+    if (error.status) errorResponse.apiStatus = error.status;
+    if (error.statusCode) errorResponse.apiStatusCode = error.statusCode;
+    if (error.response?.data) errorResponse.apiResponse = error.response.data;
+    if (error.error) errorResponse.apiError = error.error;
+    if (error.stack) errorResponse.stack = error.stack;
     
     res.status(statusCode).json(errorResponse);
   }
@@ -406,6 +408,20 @@ router.post('/generate-voice-agent-content', async (req, res) => {
       details: error.message
     });
   }
+});
+
+/**
+ * GET /api/aiva/model-check
+ * Verify which model is configured (for debugging deployments)
+ */
+router.get('/model-check', (req, res) => {
+  res.json({
+    model: ANTHROPIC_MODEL,
+    hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+    apiKeyLength: process.env.ANTHROPIC_API_KEY?.length || 0,
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV
+  });
 });
 
 /**
