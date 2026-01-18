@@ -4,6 +4,7 @@ const API_URL = process.env.TEST_API_URL || 'https://aiva-y723.onrender.com';
 
 test.describe('AIVA ROI Calculator API', () => {
   test('should generate deliverable content successfully', async ({ request }) => {
+    test.setTimeout(120000); // 2 minutes timeout for AI generation
     const response = await request.post(`${API_URL}/api/aiva/generate-deliverable-content`, {
       data: {
         jobTitle: 'Financial Analyst',
@@ -81,8 +82,19 @@ test.describe('AIVA ROI Calculator API', () => {
       }
     });
 
-    expect(response.status()).toBe(200);
+    console.log(`Response status: ${response.status()}`);
+    const status = response.status();
+    
+    if (status !== 200) {
+      const errorText = await response.text();
+      console.error(`Error response: ${errorText}`);
+      throw new Error(`Expected 200, got ${status}: ${errorText}`);
+    }
+    
     const data = await response.json();
+    console.log(`Response data keys: ${Object.keys(data).join(', ')}`);
+    console.log(`Deliverables count: ${data.deliverables?.length || 0}`);
+    
     expect(data).toHaveProperty('success');
     expect(data).toHaveProperty('deliverables');
     expect(Array.isArray(data.deliverables)).toBe(true);
@@ -97,6 +109,15 @@ test.describe('AIVA ROI Calculator API', () => {
         expect(deliverable).toHaveProperty('businessROI');
       }
     });
+    
+    // Verify no 500 errors
+    expect(status).toBe(200);
+    if (data.errors && data.errors.length > 0) {
+      console.warn(`Some deliverables failed: ${data.errors.length}`);
+      // At least some should succeed
+      const successCount = data.deliverables.filter(d => !d.error).length;
+      expect(successCount).toBeGreaterThan(0);
+    }
   });
 
   test('should return proper error when all deliverables fail', async ({ request }) => {

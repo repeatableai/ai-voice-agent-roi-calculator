@@ -7,6 +7,7 @@ module.exports = defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  timeout: 120000, // 2 minutes default timeout
   use: {
     baseURL: process.env.TEST_API_URL || 'https://aiva-y723.onrender.com',
     trace: 'on-first-retry',
