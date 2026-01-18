@@ -125,7 +125,7 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       companyName,
       companyWebsite,
       companySize,
-      companyContext,
+      companyContext: rawCompanyContext,
       deliverables,
       biggestFrustration,
       hourlyRate,
@@ -134,7 +134,29 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       metrics // Optional: calculated metrics to save
     } = req.body;
     
-    console.log('🚀 [ROUTE] Request received:', { jobTitle, industry, companyName, deliverableCount: deliverables?.length });
+    // Sanitize companyContext if present - remove any non-serializable data
+    let companyContext = null;
+    if (rawCompanyContext && typeof rawCompanyContext === 'object') {
+      try {
+        // Only keep serializable string properties
+        companyContext = {
+          ...(rawCompanyContext.rawContent && { rawContent: String(rawCompanyContext.rawContent).substring(0, 3000) }),
+          ...(rawCompanyContext.companySize && { companySize: String(rawCompanyContext.companySize) }),
+          ...(rawCompanyContext.products && { products: String(rawCompanyContext.products).substring(0, 500) }),
+          ...(rawCompanyContext.industry && { industry: String(rawCompanyContext.industry).substring(0, 500) }),
+          ...(rawCompanyContext.recentNews && { recentNews: String(rawCompanyContext.recentNews).substring(0, 500) })
+        };
+        // If empty, set to null
+        if (Object.keys(companyContext).length === 0) {
+          companyContext = null;
+        }
+      } catch (sanitizeError) {
+        console.warn('⚠️ [ROUTE] Failed to sanitize companyContext, using null:', sanitizeError.message);
+        companyContext = null;
+      }
+    }
+    
+    console.log('🚀 [ROUTE] Request received:', { jobTitle, industry, companyName, deliverableCount: deliverables?.length, hasCompanyContext: !!companyContext });
 
     // Validate required fields
     if (!jobTitle || !industry || !companyName || !deliverables || deliverables.length === 0) {

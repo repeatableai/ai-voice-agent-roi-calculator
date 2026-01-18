@@ -387,6 +387,28 @@ export default function VoiceROICalculator() {
       // Use relative URL when served by backend (same origin), or VITE_API_URL if set
       const apiUrl = import.meta.env.VITE_API_URL || '';
 
+      // Sanitize companyContext before sending - remove any non-serializable data
+      let sanitizedContext = null;
+      if (companyContext) {
+        try {
+          // Only include serializable properties
+          sanitizedContext = {
+            ...(companyContext.rawContent && { rawContent: String(companyContext.rawContent).substring(0, 3000) }),
+            ...(companyContext.companySize && { companySize: String(companyContext.companySize) }),
+            ...(companyContext.products && { products: String(companyContext.products).substring(0, 500) }),
+            ...(companyContext.industry && { industry: String(companyContext.industry).substring(0, 500) }),
+            ...(companyContext.recentNews && { recentNews: String(companyContext.recentNews).substring(0, 500) })
+          };
+          // If empty, set to null
+          if (Object.keys(sanitizedContext).length === 0) {
+            sanitizedContext = null;
+          }
+        } catch (sanitizeError) {
+          console.warn('⚠️ Failed to sanitize companyContext, sending null:', sanitizeError);
+          sanitizedContext = null;
+        }
+      }
+
       // Log request data for debugging
       console.log('🚀 API Request:', {
         jobTitle,
@@ -394,6 +416,7 @@ export default function VoiceROICalculator() {
         companyName,
         deliverableCount: deliverables.length,
         hasFrustration: !!biggestFrustration,
+        hasCompanyContext: !!sanitizedContext,
         apiUrl: `${apiUrl}/api/aiva/generate-deliverable-content`
       });
 
@@ -407,7 +430,7 @@ export default function VoiceROICalculator() {
           jobTitle,
           industry,
           companyName,
-          companyContext,
+          companyContext: sanitizedContext, // Use sanitized version
           biggestFrustration,
           hourlyRate,
           deliverables: deliverables.map(d => ({
