@@ -447,36 +447,46 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     }
 
     // Return generated content with error information
-    // Sanitize the entire response object before sending to ensure JSON serializability
+    // Use direct JSON.stringify with try-catch as final safety net
     try {
+      // Try sanitization first
       let sanitizedResponse;
       try {
         sanitizedResponse = sanitizeForJSON(response);
+        res.json(sanitizedResponse);
       } catch (sanitizeError) {
-        console.error('❌ [ROUTE] Sanitization failed, using fallback:', sanitizeError);
-        // Fallback: manually construct a safe response
-        sanitizedResponse = {
-          success: response.success,
-          deliverables: (response.deliverables || []).map(d => {
-            try {
-              return sanitizeForJSON(d);
-            } catch (e) {
-              return {
-                title: d?.title || 'Unknown',
-                error: d?.error || false,
-                ...(d?.error && d?.errorMessage ? { errorMessage: String(d.errorMessage) } : {})
-              };
+        console.error('❌ [ROUTE] Sanitization failed, using direct JSON.stringify:', sanitizeError.message);
+        // Fallback: try direct JSON.stringify with replacer
+        try {
+          const directResponse = JSON.stringify(response, (key, value) => {
+            if (typeof value === 'function') return '[Function]';
+            if (value === undefined) return null;
+            if (value instanceof Error) {
+              return { message: value.message, name: value.name };
             }
-          }),
-          ...(response.errors && { errors: Array.isArray(response.errors) ? response.errors.map(e => ({
-            index: e.index,
-            title: String(e.title || 'Unknown'),
-            error: String(e.error || 'Unknown error')
-          })) : [] }),
-          ...(response.warning && { warning: String(response.warning) })
-        };
+            return value;
+          });
+          res.setHeader('Content-Type', 'application/json');
+          res.send(directResponse);
+        } catch (directError) {
+          console.error('❌ [ROUTE] Direct JSON.stringify also failed:', directError.message);
+          // Last resort: minimal safe response
+          res.status(200).json({
+            success: Boolean(response.success),
+            deliverables: (response.deliverables || []).slice(0, 10).map(d => ({
+              title: String(d?.title || 'Unknown'),
+              ...(d?.error && { error: true, errorMessage: String(d.errorMessage || 'Error') })
+            })),
+            ...(response.errors && Array.isArray(response.errors) && response.errors.length > 0 ? {
+              errors: response.errors.slice(0, 5).map(e => ({
+                index: Number(e.index) || 0,
+                title: String(e.title || 'Unknown'),
+                error: String(e.error || 'Unknown error')
+              }))
+            } : {})
+          });
+        }
       }
-      res.json(sanitizedResponse);
     } catch (jsonError) {
       console.error('❌ [ROUTE] Failed to serialize response:', jsonError);
       console.error('❌ [ROUTE] Response object keys:', Object.keys(response));
