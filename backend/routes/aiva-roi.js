@@ -9,6 +9,7 @@ const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 // Anthropic model configuration - use correct model name
 const ANTHROPIC_MODEL = 'claude-3-5-sonnet-20240620';
+console.log('🔍 MODEL CONFIGURED:', ANTHROPIC_MODEL);
 
 // Initialize Anthropic client
 let anthropic;
@@ -274,7 +275,7 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
   } catch (error) {
     console.error('❌ Error generating deliverable content:', error);
     console.error('❌ Error stack:', error.stack);
-    console.error('❌ Error details:', {
+    console.error('❌ Full error object:', JSON.stringify({
       message: error.message,
       name: error.name,
       status: error.status,
@@ -282,8 +283,10 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
       code: error.code,
       cause: error.cause,
       response: error.response?.data || error.response || 'No response',
-      errorType: error.constructor?.name
-    });
+      errorType: error.constructor?.name,
+      model: ANTHROPIC_MODEL,
+      hasApiKey: !!process.env.ANTHROPIC_API_KEY
+    }, null, 2));
     console.error('❌ Request body:', JSON.stringify(req.body, null, 2));
     
     // Provide more helpful error messages
@@ -563,6 +566,7 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
 
     let message;
     try {
+      console.log(`📡 Calling Anthropic API with model: ${ANTHROPIC_MODEL}`);
       message = await anthropic.messages.create({
         model: ANTHROPIC_MODEL,
         max_tokens: 16000,
@@ -573,15 +577,32 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
         }]
       });
     } catch (apiError) {
+      // Log full error details
+      console.error(`❌ Anthropic API error details:`, {
+        status: apiError.status,
+        statusCode: apiError.statusCode,
+        message: apiError.message,
+        error: apiError.error,
+        type: apiError.type,
+        code: apiError.code,
+        model: ANTHROPIC_MODEL,
+        fullError: JSON.stringify(apiError, Object.getOwnPropertyNames(apiError))
+      });
+      
       // Handle Anthropic API errors specifically
-      if (apiError.status === 401 || apiError.message?.includes('authentication') || apiError.message?.includes('API key')) {
+      if (apiError.status === 401 || apiError.statusCode === 401 || apiError.message?.includes('authentication') || apiError.message?.includes('API key')) {
         throw new Error('ANTHROPIC_API_KEY is invalid or missing. Please configure it in Render environment variables.');
       }
-      if (apiError.status === 429) {
+      if (apiError.status === 404 || apiError.statusCode === 404 || apiError.error?.type === 'not_found_error' || apiError.message?.includes('not_found') || apiError.message?.includes('model:')) {
+        const modelError = apiError.error?.message || apiError.message || 'Model not found';
+        throw new Error(`Anthropic model error: ${modelError}. Current model: ${ANTHROPIC_MODEL}`);
+      }
+      if (apiError.status === 429 || apiError.statusCode === 429) {
         throw new Error('Anthropic API rate limit exceeded. Please try again in a moment.');
       }
-      // Re-throw other errors
-      throw apiError;
+      // Re-throw with more context
+      const errorMsg = apiError.error?.message || apiError.message || 'Unknown API error';
+      throw new Error(`Anthropic API error (${apiError.status || apiError.statusCode || 'unknown'}): ${errorMsg}`);
     }
     
     const duration = Date.now() - startTime;
