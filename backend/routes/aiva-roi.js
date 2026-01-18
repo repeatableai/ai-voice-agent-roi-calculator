@@ -109,8 +109,14 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
         allDeliverables.push(frustrationDeliverable);
         console.log(`✅ 6th deliverable added: "${frustrationDeliverable.title}"`);
       } catch (frustrationError) {
-        console.error('Failed to generate frustration deliverable:', frustrationError);
-        // Continue with 5 deliverables if frustration generation fails
+        console.error('❌ Failed to generate frustration deliverable:', {
+          message: frustrationError.message,
+          status: frustrationError.status,
+          error: frustrationError.error,
+          model: ANTHROPIC_MODEL
+        });
+        // Continue with 5 deliverables if frustration generation fails - don't crash the whole request
+        console.log('⚠️ Continuing with 5 deliverables (frustration generation skipped)');
       }
     }
 
@@ -189,15 +195,33 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
 
     console.log(`✅ Generated ${generatedDeliverables.length} deliverables (${errors.length} errors)`);
 
-    // Prepare response
+    // Prepare response - ALWAYS return 200 even if some fail, so frontend can show partial results
     const response = {
       success: errors.length === 0,
       deliverables: generatedDeliverables,
       ...(errors.length > 0 && {
         errors: errors,
-        warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`
+        warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`,
+        // Include error details for debugging
+        errorDetails: errors.map(e => ({
+          index: e.index,
+          title: e.title,
+          error: e.error
+        }))
       })
     };
+    
+    // If ALL deliverables failed, still return 200 but with clear error message
+    if (errors.length === allDeliverables.length && generatedDeliverables.length === 0) {
+      console.error('❌ ALL deliverables failed to generate');
+      return res.status(500).json({
+        error: 'All deliverables failed to generate',
+        details: errors[0]?.error || 'Unknown error',
+        errors: errors,
+        model: ANTHROPIC_MODEL,
+        hasApiKey: !!process.env.ANTHROPIC_API_KEY
+      });
+    }
 
     // Optionally save analysis to database
     if (save && req.session?.userId) {
