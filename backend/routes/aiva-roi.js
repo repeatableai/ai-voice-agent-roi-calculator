@@ -865,7 +865,7 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
       console.log(`📡 [API] Calling Anthropic API for deliverable #${index + 1}`);
       console.log(`📡 [API] Model: ${ANTHROPIC_MODEL}`);
       console.log(`📡 [API] Prompt length: ${prompt.length} chars`);
-      console.log(`📡 [API] Max tokens: 16000`);
+      console.log(`📡 [API] Max tokens: 8000`);
       
       // Reduce max_tokens to speed up generation and avoid Render timeout
       // Render free tier has 30s timeout, so we need to be faster
@@ -1914,16 +1914,29 @@ async function generateFrustrationDeliverable({ frustration, jobTitle, industry,
       throw new Error('Invalid JSON response for frustration deliverable');
     }
 
-    // Calculate derived metrics
-    const annualHoursFreed = (deliverable.baselineHours - deliverable.aiEnabledHours) * deliverable.occurrencesPerYear;
-    const payrollFreed = annualHoursFreed * hourlyRate;
+    // Calculate derived metrics with proper validation
+    const baselineHours = parseFloat(deliverable.baselineHours) || 0;
+    const aiEnabledHours = parseFloat(deliverable.aiEnabledHours) || 0;
+    const occurrencesPerYear = parseFloat(deliverable.occurrencesPerYear) || 12;
+    const rate = parseFloat(hourlyRate) || 50;
+    
+    // Ensure no NaN values
+    const annualHoursFreed = isNaN(baselineHours) || isNaN(aiEnabledHours) || isNaN(occurrencesPerYear)
+      ? 0
+      : (baselineHours - aiEnabledHours) * occurrencesPerYear;
+    const payrollFreed = isNaN(annualHoursFreed) || isNaN(rate)
+      ? 0
+      : annualHoursFreed * rate;
 
     console.log(`✅ Custom frustration deliverable generated: "${deliverable.title}"`);
 
     return {
       ...deliverable,
-      annualHoursFreed: Math.round(annualHoursFreed * 10) / 10,
-      payrollFreed: Math.round(payrollFreed)
+      baselineHours: baselineHours,
+      aiEnabledHours: aiEnabledHours,
+      occurrencesPerYear: occurrencesPerYear,
+      annualHoursFreed: Math.round(Math.max(0, annualHoursFreed) * 10) / 10,
+      payrollFreed: Math.round(Math.max(0, payrollFreed))
     };
 
   } catch (error) {
