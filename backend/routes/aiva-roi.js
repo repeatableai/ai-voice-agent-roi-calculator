@@ -217,7 +217,7 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           index: e.index,
           title: e.title,
           error: e.error,
-          fullError: e.fullError?.message || e.fullError
+          fullError: e.fullError?.message || (e.fullError instanceof Error ? e.fullError.message : String(e.fullError || ''))
         })),
         model: ANTHROPIC_MODEL,
         hasApiKey: !!process.env.ANTHROPIC_API_KEY,
@@ -241,7 +241,7 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           index: e.index,
           title: e.title,
           error: e.error,
-          fullError: e.fullError?.message || e.fullError
+          fullError: e.fullError?.message || (e.fullError instanceof Error ? e.fullError.message : String(e.fullError || ''))
         }))
       })
     };
@@ -382,7 +382,19 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     if (error.error) errorResponse.apiError = error.error;
     if (error.stack) errorResponse.stack = error.stack;
     
-    res.status(statusCode).json(errorResponse);
+    try {
+      res.status(statusCode).json(errorResponse);
+    } catch (jsonError) {
+      console.error('❌ [ROUTE] Failed to serialize error response:', jsonError);
+      console.error('❌ [ROUTE] JSON error:', jsonError.message);
+      // Fallback: send minimal error response
+      res.status(500).json({
+        error: 'Failed to generate deliverable content',
+        details: errorMessage,
+        model: ANTHROPIC_MODEL,
+        hasApiKey: !!process.env.ANTHROPIC_API_KEY
+      });
+    }
   }
 });
 
