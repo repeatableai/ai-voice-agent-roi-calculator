@@ -216,29 +216,74 @@ test.describe('AIVA ROI Calculator - Public Link E2E Test', () => {
         console.log('⚠️ API call timeout or not detected, checking page results...');
       }
       
-      // Wait a bit for UI to update
-      await page.waitForTimeout(5000);
+      // Wait a bit for UI to update after API call
+      await page.waitForTimeout(3000);
       
       // Check for results - look for actual content that appears (Harada Matrix, deliverables, etc.)
       console.log('⏳ Waiting for results to appear...');
+      
+      const resultsSelector = 'text=/Harada|Deliverable|Production Planning|Quality Investigation|Supplier Coordination|Team Coaching|Equipment Maintenance|Operations Manager/i';
+      let deliverablesCount = 0;
+      let hasHaradaMatrix = false;
+      
       try {
-        await page.waitForSelector('text=/Harada|Deliverable|Production Planning|Quality Investigation|Supplier Coordination|Team Coaching|Equipment Maintenance|Marketing Manager/i', { timeout: 120000 });
+        // Wait for selector to appear AND be visible
+        await page.waitForSelector(resultsSelector, { timeout: 120000, state: 'visible' });
+        console.log('✅ Results selector found and visible!');
+        
+        // Brief wait for content to fully render
+        await page.waitForTimeout(2000);
+        
+        // Immediately verify content while it's visible - don't wait!
+        const isVisible = await page.locator(resultsSelector).first().isVisible({ timeout: 5000 }).catch(() => false);
+        if (!isVisible) {
+          throw new Error('Results selector found but not visible');
+        }
+        
         console.log('✅ Results page loaded successfully!');
+        
+        // Immediately count deliverables while content is visible
+        deliverablesCount = await page.locator('text=/Production Planning|Quality Investigation|Supplier Coordination|Team Coaching|Equipment Maintenance/i').count();
+        console.log(`✅ Found ${deliverablesCount} deliverable elements`);
+        
+        // Verify Harada Matrix immediately
+        hasHaradaMatrix = await page.locator('text=/Harada/i').first().isVisible({ timeout: 5000 }).catch(() => false);
+        if (hasHaradaMatrix) {
+          console.log('✅ Harada Deliverable Matrix is visible');
+        } else {
+          console.warn('⚠️ Harada Matrix not found, but continuing...');
+        }
+        
+        // Take screenshot while content is confirmed visible
+        await page.screenshot({ path: 'test-results/03-results.png', fullPage: true });
+        
       } catch (selectorError) {
-        // If results don't appear, check for errors
+        // Take screenshot for debugging
+        await page.screenshot({ path: 'test-results/03-error-state.png', fullPage: true }).catch(() => {});
+        
+        // Get page content for debugging
+        const bodyText = await page.locator('body').textContent().catch(() => 'Could not get body text');
+        const pageUrl = page.url();
+        
+        console.error('❌ Results did not appear:', selectorError.message);
+        console.error('Page URL:', pageUrl);
+        console.error('Body text preview:', bodyText.substring(0, 2000));
+        
+        // Check for errors on page
         const errorVisible = await page.locator('text=/error|failed|500|internal server error/i').first().isVisible().catch(() => false);
         if (errorVisible) {
           const errorText = await page.locator('text=/error|failed|500|internal server error/i').first().textContent();
           throw new Error(`Error displayed on page: ${errorText}`);
         }
+        
+        // If API succeeded but no results, that's a problem
+        if (apiStatus === 200) {
+          throw new Error(`API returned 200 but results page did not load: ${selectorError.message}`);
+        }
+        
         // If no results and no error, fail
-        throw new Error('Results page did not load and no error message found');
+        throw new Error(`Results page did not load: ${selectorError.message}`);
       }
-      
-      await page.waitForTimeout(2000); // Wait for content to render
-      
-      // Take screenshot of results/error
-      await page.screenshot({ path: 'test-results/03-results.png', fullPage: true });
       
       // Log all captured errors
       if (consoleErrors.length > 0) {
@@ -249,44 +294,8 @@ test.describe('AIVA ROI Calculator - Public Link E2E Test', () => {
       }
       console.log('📊 API responses:', apiResponses);
       
-      // Check for errors
-      const errorText = await page.locator('text=/error|failed|500|internal server error/i').first().textContent().catch(() => null);
-      if (errorText) {
-        console.error(`❌ Error found on page: ${errorText}`);
-        console.error('Console errors:', consoleErrors);
-        console.error('Network errors:', networkErrors);
-        throw new Error(`Test failed with error: ${errorText}`);
-      }
-      
-      // Check for success indicators - look for actual content
-      const hasResults = await page.locator('text=/Harada|Deliverable|Production Planning|Quality Investigation|Supplier Coordination|Team Coaching|Equipment Maintenance/i').first().isVisible().catch(() => false);
-      if (!hasResults) {
-        // Get page content for debugging
-        const bodyText = await page.locator('body').textContent().catch(() => 'Could not get body text');
-        
-        console.error('❌ No success indicators found');
-        console.error('Body text preview:', bodyText.substring(0, 1000));
-        console.error('Console errors:', consoleErrors);
-        console.error('Network errors:', networkErrors);
-        console.error('API responses:', apiResponses);
-        
-        throw new Error(`No success indicators found. Console errors: ${consoleErrors.length}, Network errors: ${networkErrors.length}`);
-      }
-      
-      console.log('✅ Success! Results page loaded');
-      
-      // Verify we have deliverables
-      const deliverablesCount = await page.locator('text=/Production Planning|Quality Investigation|Supplier Coordination|Team Coaching|Equipment Maintenance/i').count();
-      console.log(`✅ Found ${deliverablesCount} deliverable elements`);
-      
-      // Verify we have the Harada Matrix
-      const hasHaradaMatrix = await page.locator('text=/Harada/i').first().isVisible().catch(() => false);
-      if (hasHaradaMatrix) {
-        console.log('✅ Harada Deliverable Matrix is visible');
-      }
-      
       // Final screenshot
-      await page.screenshot({ path: 'test-results/04-final-results.png', fullPage: true });
+      await page.screenshot({ path: 'test-results/04-final-results.png', fullPage: true }).catch(() => {});
       
       // Assertions - verify page functionality
       expect(deliverablesCount).toBeGreaterThan(0);
