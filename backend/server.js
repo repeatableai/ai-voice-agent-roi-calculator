@@ -104,14 +104,34 @@ const corsOptions = {
       allowedOrigins.push(corsOrigin);
     }
 
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // CRITICAL: Allow same-origin requests (when frontend and backend are on same domain)
+    // This handles cases where the app is served from the same domain as the API
+    const deploymentUrl = process.env.RENDER_EXTERNAL_URL || 'https://aiva-y723.onrender.com';
+    if (origin && (origin === deploymentUrl || origin.startsWith(deploymentUrl.replace('https://', 'http://')))) {
+      return callback(null, true);
     }
+    
+    // Allow requests from Render deployment domain (same-origin)
+    if (origin && origin.includes('aiva-y723.onrender.com')) {
+      return callback(null, true);
+    }
+
+    // In development, allow all origins
+    if (NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+
+    // Log rejected origin for debugging
+    console.warn(`⚠️ CORS: Rejected origin ${origin}. Allowed: ${allowedOrigins.join(', ')}, Deployment: ${deploymentUrl}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
