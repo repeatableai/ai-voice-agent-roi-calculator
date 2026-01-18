@@ -321,21 +321,36 @@ router.get('/me', async (req, res, next) => {
       return res.status(200).json({ user: null });
     }
 
-    const result = await db.query(
-      'SELECT id, email, name, role, company_id, created_at, last_login FROM users WHERE id = $1',
-      [req.session.userId]
-    );
-
-    if (result.rows.length === 0) {
+    // Check if database is available
+    if (!process.env.DATABASE_URL) {
+      // No database - clear session and return null
       req.session.destroy();
       return res.status(200).json({ user: null });
     }
 
-    res.json({ user: result.rows[0] });
+    try {
+      const result = await db.query(
+        'SELECT id, email, name, role, company_id, created_at, last_login FROM users WHERE id = $1',
+        [req.session.userId]
+      );
+
+      if (result.rows.length === 0) {
+        req.session.destroy();
+        return res.status(200).json({ user: null });
+      }
+
+      res.json({ user: result.rows[0] });
+    } catch (dbError) {
+      // Database error - clear session and return null
+      logError('Database error in /me:', dbError);
+      req.session.destroy();
+      return res.status(200).json({ user: null });
+    }
 
   } catch (error) {
     logError('Get user error:', error);
-    next(error);
+    // Always return 200 with null user to avoid breaking frontend
+    return res.status(200).json({ user: null });
   }
 });
 
