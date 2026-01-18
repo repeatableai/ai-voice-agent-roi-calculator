@@ -9,9 +9,8 @@ const db = require('../db/database');
 const { generateEmbedding } = require('../utils/embeddings');
 const { logInfo, logError } = require('../utils/logger');
 
-// Anthropic model configuration - use working model
-// Default to Haiku which is confirmed working, can override via ANTHROPIC_MODEL env var
-const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307';
+// Anthropic model configuration - use latest Sonnet 4 (confirmed working)
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
