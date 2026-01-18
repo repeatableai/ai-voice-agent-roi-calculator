@@ -867,9 +867,11 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
       console.log(`📡 [API] Prompt length: ${prompt.length} chars`);
       console.log(`📡 [API] Max tokens: 16000`);
       
+      // Reduce max_tokens to speed up generation and avoid Render timeout
+      // Render free tier has 30s timeout, so we need to be faster
       message = await anthropic.messages.create({
         model: ANTHROPIC_MODEL,
-        max_tokens: 16000,
+        max_tokens: 8000, // Reduced from 16000 to speed up generation
         temperature: 0.7,
         messages: [{
           role: 'user',
@@ -1889,9 +1891,10 @@ async function generateFrustrationDeliverable({ frustration, jobTitle, industry,
       existingDeliverables
     });
 
+    // Reduced max_tokens for frustration deliverable to speed up generation
     const message = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
-      max_tokens: 4000,
+      max_tokens: 2000, // Reduced from 4000 to speed up generation
       temperature: 0.7,
       messages: [{
         role: 'user',
