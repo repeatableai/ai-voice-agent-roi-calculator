@@ -362,7 +362,7 @@ router.post('/generate-voice-agent-content', async (req, res) => {
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 16000,
       temperature: 0.7,
       messages: [{
@@ -403,6 +403,57 @@ router.post('/generate-voice-agent-content', async (req, res) => {
 });
 
 /**
+ * GET /api/aiva/test-anthropic
+ * Test endpoint to verify Anthropic API is working
+ */
+router.get('/test-anthropic', async (req, res) => {
+  try {
+    if (!anthropic) {
+      return res.status(500).json({
+        error: 'Anthropic client not initialized',
+        hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+        apiKeyLength: process.env.ANTHROPIC_API_KEY?.length || 0
+      });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({
+        error: 'ANTHROPIC_API_KEY not set',
+        hasApiKey: false
+      });
+    }
+
+    // Make a simple test call
+    const testMessage = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20240620',
+      max_tokens: 10,
+      messages: [{
+        role: 'user',
+        content: 'Say "test"'
+      }]
+    });
+
+    res.json({
+      success: true,
+      message: 'Anthropic API is working',
+      response: testMessage.content[0].text,
+      apiKeyConfigured: true,
+      model: 'claude-3-5-sonnet-20241022'
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Anthropic API test failed',
+      message: error.message,
+      status: error.status,
+      statusCode: error.statusCode,
+      code: error.code,
+      hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+      apiKeyLength: process.env.ANTHROPIC_API_KEY?.length || 0
+    });
+  }
+});
+
+/**
  * POST /api/aiva/research-role-deliverables
  * Dynamically researches and generates role-specific deliverables for unmapped roles
  */
@@ -436,7 +487,7 @@ router.post('/research-role-deliverables', async (req, res) => {
     const prompt = buildDeliverableResearchPrompt({ jobTitle, industry, companyName, hourlyRate });
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 8000,
       temperature: 0.7,
       messages: [{
@@ -510,7 +561,7 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
     let message;
     try {
       message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet-20240620',
         max_tokens: 16000,
         temperature: 0.7,
         messages: [{
@@ -1515,7 +1566,7 @@ async function generateFrustrationDeliverable({ frustration, jobTitle, industry,
     });
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-5-sonnet-20240620',
       max_tokens: 4000,
       temperature: 0.7,
       messages: [{
