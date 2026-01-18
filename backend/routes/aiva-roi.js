@@ -333,25 +333,40 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     if (errors.length === allDeliverables.length && errors.length > 0) {
       console.error('❌ [RESULT] ALL deliverables failed to generate');
       const firstError = errors[0];
-      const errorResponse = {
-        error: 'All deliverables failed to generate',
-        details: firstError.error || 'Unknown error',
-        errors: errors.map(e => ({
-          index: e.index,
-          title: e.title,
-          error: e.error,
-          fullError: typeof e.fullError === 'object' && e.fullError !== null 
-            ? (e.fullError.message || JSON.stringify(e.fullError))
-            : String(e.fullError || '')
-        })),
-        model: ANTHROPIC_MODEL,
-        hasApiKey: !!process.env.ANTHROPIC_API_KEY,
-        totalDeliverables: allDeliverables.length,
-        failedCount: errors.length
-      };
-      // Sanitize before sending
-      const sanitizedErrorResponse = sanitizeForJSON(errorResponse);
-      return res.status(500).json(sanitizedErrorResponse);
+      try {
+        const errorResponse = {
+          error: 'All deliverables failed to generate',
+          details: String(firstError.error || 'Unknown error'),
+          errors: errors.map(e => ({
+            index: Number(e.index) || 0,
+            title: String(e.title || 'Unknown'),
+            error: String(e.error || 'Unknown error'),
+            fullError: typeof e.fullError === 'object' && e.fullError !== null 
+              ? String(e.fullError.message || JSON.stringify(e.fullError))
+              : String(e.fullError || '')
+          })),
+          model: String(ANTHROPIC_MODEL),
+          hasApiKey: Boolean(process.env.ANTHROPIC_API_KEY),
+          totalDeliverables: Number(allDeliverables.length),
+          failedCount: Number(errors.length)
+        };
+        // Try sanitization, but have fallback
+        try {
+          const sanitizedErrorResponse = sanitizeForJSON(errorResponse);
+          return res.status(500).json(sanitizedErrorResponse);
+        } catch (sanitizeError) {
+          console.error('❌ [RESULT] Failed to sanitize error response, using direct:', sanitizeError.message);
+          return res.status(500).json(errorResponse);
+        }
+      } catch (buildError) {
+        console.error('❌ [RESULT] Failed to build error response:', buildError.message);
+        return res.status(500).json({
+          error: 'All deliverables failed to generate',
+          details: String(firstError.error || 'Unknown error'),
+          model: String(ANTHROPIC_MODEL),
+          hasApiKey: Boolean(process.env.ANTHROPIC_API_KEY)
+        });
+      }
     }
 
     // Prepare response - return 200 with partial results if some succeeded
