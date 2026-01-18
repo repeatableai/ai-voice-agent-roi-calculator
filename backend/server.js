@@ -127,6 +127,27 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ===================================
+// Response Timeout Configuration
+// ===================================
+
+// Set response timeout for long-running AI generation requests
+// This prevents Express from killing responses during parallel API calls
+app.use((req, res, next) => {
+  // Set a 10-minute timeout for responses (enough for parallel deliverable generation)
+  res.setTimeout(10 * 60 * 1000, () => {
+    if (!res.headersSent) {
+      console.error(`⚠️ Response timeout after 10 minutes for ${req.method} ${req.path}`);
+      res.status(503).json({
+        error: 'Request timeout',
+        message: 'The request took too long to complete. Please try again.',
+        path: req.path
+      });
+    }
+  });
+  next();
+});
+
+// ===================================
 // Logging
 // ===================================
 
@@ -621,13 +642,23 @@ async function startServer() {
     // Configure server timeouts for long-running AI generation requests
     // Render allows up to 100 minutes, so we set a generous timeout
     // This allows parallel API calls to complete without timing out
+    
+    // Socket timeout: how long to wait for inactivity on the socket
     server.timeout = 600000; // 10 minutes (600,000ms) - enough for parallel deliverable generation
+    
+    // Request timeout: how long to wait to receive request headers/body (0 = no timeout)
+    server.requestTimeout = 0; // Disable request timeout - allow long-running requests
+    
+    // Keep-alive settings: keep connections alive for better performance
     server.keepAliveTimeout = 65000; // 65 seconds - keep connections alive longer
     server.headersTimeout = 66000; // 66 seconds - must be > keepAliveTimeout
     
-    logInfo(`⏱️  Server timeout configured: ${server.timeout}ms (10 minutes)`);
-    logInfo(`⏱️  Keep-alive timeout: ${server.keepAliveTimeout}ms`);
-    logInfo(`⏱️  Headers timeout: ${server.headersTimeout}ms`);
+    logInfo(`⏱️  Server timeout configured:`);
+    logInfo(`    - Socket timeout: ${server.timeout}ms (10 minutes)`);
+    logInfo(`    - Request timeout: ${server.requestTimeout === 0 ? 'disabled' : server.requestTimeout + 'ms'}`);
+    logInfo(`    - Keep-alive timeout: ${server.keepAliveTimeout}ms`);
+    logInfo(`    - Headers timeout: ${server.headersTimeout}ms`);
+    logInfo(`    - Response timeout: 10 minutes (set via middleware)`);
 
   } catch (error) {
     logError('Failed to start server:', error);
