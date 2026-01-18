@@ -9,6 +9,9 @@ const db = require('../db/database');
 const { generateEmbedding } = require('../utils/embeddings');
 const { logInfo, logError } = require('../utils/logger');
 
+// Anthropic model configuration - use correct model name
+const ANTHROPIC_MODEL = 'claude-3-5-sonnet-20240620';
+
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -113,7 +116,7 @@ ${agent.context_settings.specialInstructions ? `\nSpecial instructions: ${agent.
     const startTime = Date.now();
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: ANTHROPIC_MODEL,
       max_tokens: agent.context_settings.maxTokens || 1000,
       temperature: agent.context_settings.temperature || 0.7,
       system: systemPrompt,
