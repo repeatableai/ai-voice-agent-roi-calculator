@@ -622,13 +622,16 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
           console.log('✅ [RESPONSE] Fallback minimal response sent');
           return;
         } catch (fallbackError) {
-        console.error('❌ [ROUTE] Fallback serialization also failed:', fallbackError);
-        res.status(500).json({
-          error: 'Failed to generate response',
-          details: 'Response serialization failed',
-          model: ANTHROPIC_MODEL,
-          hasApiKey: !!process.env.ANTHROPIC_API_KEY
-        });
+          console.error('❌ [ROUTE] Fallback serialization also failed:', fallbackError);
+          if (!res.headersSent) {
+            res.status(500).json({
+              error: 'Failed to generate response',
+              details: 'Response serialization failed',
+              model: ANTHROPIC_MODEL,
+              hasApiKey: !!process.env.ANTHROPIC_API_KEY
+            });
+          }
+        }
       }
     }
 
