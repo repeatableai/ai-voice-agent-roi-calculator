@@ -57,6 +57,11 @@ function sanitizeForJSON(obj) {
         return null;
       }
       
+      // Handle NaN and Infinity
+      if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
+        return null;
+      }
+      
       // Convert Error objects to plain objects
       if (value instanceof Error) {
         return {
