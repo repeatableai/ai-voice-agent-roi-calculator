@@ -185,50 +185,66 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         generatedDeliverables.push(result.value);
       } else {
         const deliverable = allDeliverables[index];
-        console.error(`❌ Failed to generate deliverable #${index + 1} "${deliverable?.title || 'Unknown'}":`, result.reason);
+        const errorMessage = result.reason?.message || 'Unknown error';
+        console.error(`❌ [RESULT] Failed to generate deliverable #${index + 1} "${deliverable?.title || 'Unknown'}":`, errorMessage);
+        console.error(`❌ [RESULT] Full error:`, result.reason);
         errors.push({
           index: index + 1,
           title: deliverable?.title || 'Unknown',
-          error: result.reason?.message || 'Unknown error'
+          error: errorMessage,
+          fullError: result.reason
         });
         // Include the original deliverable with error flag so frontend can handle it
         generatedDeliverables.push({
           ...deliverable,
           error: true,
-          errorMessage: result.reason?.message || 'Failed to generate content'
+          errorMessage: errorMessage
         });
       }
     });
 
-    console.log(`✅ Generated ${generatedDeliverables.length} deliverables (${errors.length} errors)`);
+    console.log(`✅ [RESULT] Generated ${generatedDeliverables.length} deliverables (${errors.length} errors)`);
+    console.log(`✅ [RESULT] Successful: ${generatedDeliverables.filter(d => !d.error).length}, Failed: ${errors.length}`);
 
-    // Prepare response - ALWAYS return 200 even if some fail, so frontend can show partial results
+    // If ALL deliverables failed, return 500 with detailed error info
+    if (errors.length === allDeliverables.length && errors.length > 0) {
+      console.error('❌ [RESULT] ALL deliverables failed to generate');
+      const firstError = errors[0];
+      return res.status(500).json({
+        error: 'All deliverables failed to generate',
+        details: firstError.error || 'Unknown error',
+        errors: errors.map(e => ({
+          index: e.index,
+          title: e.title,
+          error: e.error,
+          fullError: e.fullError?.message || e.fullError
+        })),
+        model: ANTHROPIC_MODEL,
+        hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+        totalDeliverables: allDeliverables.length,
+        failedCount: errors.length
+      });
+    }
+
+    // Prepare response - return 200 with partial results if some succeeded
     const response = {
       success: errors.length === 0,
       deliverables: generatedDeliverables,
       ...(errors.length > 0 && {
-        errors: errors,
-        warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`,
-        // Include error details for debugging
-        errorDetails: errors.map(e => ({
+        errors: errors.map(e => ({
           index: e.index,
           title: e.title,
           error: e.error
+        })),
+        warning: `${errors.length} deliverable(s) failed to generate. They will show with limited content.`,
+        errorDetails: errors.map(e => ({
+          index: e.index,
+          title: e.title,
+          error: e.error,
+          fullError: e.fullError?.message || e.fullError
         }))
       })
     };
-    
-    // If ALL deliverables failed, still return 200 but with clear error message
-    if (errors.length === allDeliverables.length && generatedDeliverables.length === 0) {
-      console.error('❌ ALL deliverables failed to generate');
-      return res.status(500).json({
-        error: 'All deliverables failed to generate',
-        details: errors[0]?.error || 'Unknown error',
-        errors: errors,
-        model: ANTHROPIC_MODEL,
-        hasApiKey: !!process.env.ANTHROPIC_API_KEY
-      });
-    }
 
     // Optionally save analysis to database
     if (save && req.session?.userId) {
