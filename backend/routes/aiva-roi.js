@@ -352,18 +352,6 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     if (error.stack) errorResponse.stack = error.stack;
     
     res.status(statusCode).json(errorResponse);
-  } catch (outerError) {
-    // Catch any errors that escape the inner try/catch
-    console.error('❌ CRITICAL: Unhandled error in generate-deliverable-content:', outerError);
-    console.error('❌ CRITICAL Stack:', outerError.stack);
-    res.status(500).json({
-      error: 'Internal server error',
-      details: outerError.message,
-      model: ANTHROPIC_MODEL,
-      hasApiKey: !!process.env.ANTHROPIC_API_KEY,
-      type: outerError.name,
-      stack: outerError.stack
-    });
   }
 });
 
