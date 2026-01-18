@@ -105,16 +105,41 @@ function errorHandler(err, req, res, next) {
     });
   }
 
-  // Default error response
+  // Default error response - ALWAYS log full error details
   const statusCode = err.statusCode || err.status || 500;
+  
+  // Log FULL error details for debugging
+  logError('Full error details:', {
+    message: err.message,
+    name: err.name,
+    stack: err.stack,
+    status: err.status,
+    statusCode: err.statusCode,
+    code: err.code,
+    type: err.constructor?.name,
+    path: req.path,
+    method: req.method,
+    body: req.body ? JSON.stringify(req.body).substring(0, 1000) : 'No body'
+  });
+  
   const message = process.env.NODE_ENV === 'production'
     ? 'Internal server error'
     : err.message;
 
-  res.status(statusCode).json({
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
+  // In production, still return detailed error for API routes to help debug
+  if (req.path.startsWith('/api')) {
+    res.status(statusCode).json({
+      error: message,
+      type: err.name || 'UnknownError',
+      code: err.code || 'UNKNOWN',
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  } else {
+    res.status(statusCode).json({
+      error: message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
 }
 
 module.exports = errorHandler;

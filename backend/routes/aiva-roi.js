@@ -117,8 +117,16 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
   console.log('🚀 [ROUTE] Model:', ANTHROPIC_MODEL);
   console.log('🚀 [ROUTE] Has API key:', !!process.env.ANTHROPIC_API_KEY);
   console.log('🚀 [ROUTE] Anthropic client initialized:', !!anthropic);
+  console.log('🚀 [ROUTE] Request body exists:', !!req.body);
+  console.log('🚀 [ROUTE] Request body type:', typeof req.body);
+  console.log('🚀 [ROUTE] Request body keys:', req.body ? Object.keys(req.body) : 'No body');
   
   try {
+    // Log raw body before destructuring
+    if (req.body) {
+      console.log('🚀 [ROUTE] Raw body preview:', JSON.stringify(req.body, null, 2).substring(0, 1000));
+    }
+    
     const {
       jobTitle,
       industry,
@@ -134,26 +142,68 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       metrics // Optional: calculated metrics to save
     } = req.body;
     
+    console.log('🚀 [ROUTE] Destructured values:', {
+      hasJobTitle: !!jobTitle,
+      hasIndustry: !!industry,
+      hasCompanyName: !!companyName,
+      hasDeliverables: !!deliverables,
+      deliverablesLength: deliverables?.length,
+      hasRawCompanyContext: !!rawCompanyContext,
+      rawCompanyContextType: typeof rawCompanyContext
+    });
+    
     // Sanitize companyContext if present - remove any non-serializable data
     let companyContext = null;
-    if (rawCompanyContext && typeof rawCompanyContext === 'object') {
+    console.log('🚀 [ROUTE] Processing companyContext, rawCompanyContext:', {
+      exists: !!rawCompanyContext,
+      type: typeof rawCompanyContext,
+      isObject: rawCompanyContext && typeof rawCompanyContext === 'object',
+      isArray: Array.isArray(rawCompanyContext),
+      keys: rawCompanyContext && typeof rawCompanyContext === 'object' ? Object.keys(rawCompanyContext) : 'N/A'
+    });
+    
+    if (rawCompanyContext && typeof rawCompanyContext === 'object' && !Array.isArray(rawCompanyContext)) {
       try {
+        console.log('🚀 [ROUTE] Sanitizing companyContext...');
         // Only keep serializable string properties
-        companyContext = {
-          ...(rawCompanyContext.rawContent && { rawContent: String(rawCompanyContext.rawContent).substring(0, 3000) }),
-          ...(rawCompanyContext.companySize && { companySize: String(rawCompanyContext.companySize) }),
-          ...(rawCompanyContext.products && { products: String(rawCompanyContext.products).substring(0, 500) }),
-          ...(rawCompanyContext.industry && { industry: String(rawCompanyContext.industry).substring(0, 500) }),
-          ...(rawCompanyContext.recentNews && { recentNews: String(rawCompanyContext.recentNews).substring(0, 500) })
-        };
+        const sanitized = {};
+        
+        if (rawCompanyContext.rawContent !== undefined && rawCompanyContext.rawContent !== null) {
+          sanitized.rawContent = String(rawCompanyContext.rawContent).substring(0, 3000);
+        }
+        if (rawCompanyContext.companySize !== undefined && rawCompanyContext.companySize !== null) {
+          sanitized.companySize = String(rawCompanyContext.companySize);
+        }
+        if (rawCompanyContext.products !== undefined && rawCompanyContext.products !== null) {
+          sanitized.products = String(rawCompanyContext.products).substring(0, 500);
+        }
+        if (rawCompanyContext.industry !== undefined && rawCompanyContext.industry !== null) {
+          sanitized.industry = String(rawCompanyContext.industry).substring(0, 500);
+        }
+        if (rawCompanyContext.recentNews !== undefined && rawCompanyContext.recentNews !== null) {
+          sanitized.recentNews = String(rawCompanyContext.recentNews).substring(0, 500);
+        }
+        
         // If empty, set to null
-        if (Object.keys(companyContext).length === 0) {
+        if (Object.keys(sanitized).length === 0) {
           companyContext = null;
+          console.log('🚀 [ROUTE] Sanitized companyContext is empty, setting to null');
+        } else {
+          companyContext = sanitized;
+          console.log('🚀 [ROUTE] Sanitized companyContext keys:', Object.keys(companyContext));
         }
       } catch (sanitizeError) {
-        console.warn('⚠️ [ROUTE] Failed to sanitize companyContext, using null:', sanitizeError.message);
+        console.error('❌ [ROUTE] Failed to sanitize companyContext:', sanitizeError);
+        console.error('❌ [ROUTE] Sanitize error message:', sanitizeError.message);
+        console.error('❌ [ROUTE] Sanitize error stack:', sanitizeError.stack);
+        console.warn('⚠️ [ROUTE] Using null for companyContext due to sanitization error');
         companyContext = null;
       }
+    } else if (rawCompanyContext) {
+      console.warn('⚠️ [ROUTE] rawCompanyContext is not an object, ignoring:', typeof rawCompanyContext);
+      companyContext = null;
+    } else {
+      console.log('🚀 [ROUTE] No rawCompanyContext provided');
     }
     
     console.log('🚀 [ROUTE] Request received:', { jobTitle, industry, companyName, deliverableCount: deliverables?.length, hasCompanyContext: !!companyContext });
