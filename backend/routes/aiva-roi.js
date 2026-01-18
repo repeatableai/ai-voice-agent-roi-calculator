@@ -36,6 +36,11 @@ if (!process.env.ANTHROPIC_API_KEY) {
  * Public endpoint - no authentication required
  */
 router.post('/generate-deliverable-content', optionalAuth, async (req, res, next) => {
+  console.log('🚀 [ROUTE] generate-deliverable-content called');
+  console.log('🚀 [ROUTE] Model:', ANTHROPIC_MODEL);
+  console.log('🚀 [ROUTE] Has API key:', !!process.env.ANTHROPIC_API_KEY);
+  console.log('🚀 [ROUTE] Anthropic client initialized:', !!anthropic);
+  
   try {
     const {
       jobTitle,
@@ -51,6 +56,8 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       title, // Optional: custom title for saved analysis
       metrics // Optional: calculated metrics to save
     } = req.body;
+    
+    console.log('🚀 [ROUTE] Request received:', { jobTitle, industry, companyName, deliverableCount: deliverables?.length });
 
     // Validate required fields
     if (!jobTitle || !industry || !companyName || !deliverables || deliverables.length === 0) {
@@ -297,9 +304,16 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     res.json(response);
 
   } catch (error) {
-    console.error('❌ Error generating deliverable content:', error);
-    console.error('❌ Error stack:', error.stack);
-    console.error('❌ Full error object:', JSON.stringify({
+    console.error('❌ [ROUTE] TOP LEVEL ERROR CAUGHT:');
+    console.error('❌ [ROUTE] Error message:', error.message);
+    console.error('❌ [ROUTE] Error name:', error.name);
+    console.error('❌ [ROUTE] Error status:', error.status || error.statusCode);
+    console.error('❌ [ROUTE] Error code:', error.code);
+    console.error('❌ [ROUTE] Error stack:', error.stack);
+    console.error('❌ [ROUTE] Error type:', error.constructor?.name);
+    console.error('❌ [ROUTE] Model:', ANTHROPIC_MODEL);
+    console.error('❌ [ROUTE] Has API key:', !!process.env.ANTHROPIC_API_KEY);
+    console.error('❌ [ROUTE] Full error object:', JSON.stringify({
       message: error.message,
       name: error.name,
       status: error.status,
@@ -307,11 +321,12 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
       code: error.code,
       cause: error.cause,
       response: error.response?.data || error.response || 'No response',
+      error: error.error,
       errorType: error.constructor?.name,
       model: ANTHROPIC_MODEL,
       hasApiKey: !!process.env.ANTHROPIC_API_KEY
     }, null, 2));
-    console.error('❌ Request body:', JSON.stringify(req.body, null, 2));
+    console.error('❌ [ROUTE] Request body:', JSON.stringify(req.body, null, 2));
     
     // Provide more helpful error messages
     let errorMessage = error.message || 'Unknown error occurred';
@@ -606,7 +621,11 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
 
     let message;
     try {
-      console.log(`📡 Calling Anthropic API with model: ${ANTHROPIC_MODEL}`);
+      console.log(`📡 [API] Calling Anthropic API for deliverable #${index + 1}`);
+      console.log(`📡 [API] Model: ${ANTHROPIC_MODEL}`);
+      console.log(`📡 [API] Prompt length: ${prompt.length} chars`);
+      console.log(`📡 [API] Max tokens: 16000`);
+      
       message = await anthropic.messages.create({
         model: ANTHROPIC_MODEL,
         max_tokens: 16000,
@@ -616,18 +635,18 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
           content: prompt
         }]
       });
+      
+      console.log(`✅ [API] Success for deliverable #${index + 1}`);
     } catch (apiError) {
-      // Log full error details
-      console.error(`❌ Anthropic API error details:`, {
-        status: apiError.status,
-        statusCode: apiError.statusCode,
-        message: apiError.message,
-        error: apiError.error,
-        type: apiError.type,
-        code: apiError.code,
-        model: ANTHROPIC_MODEL,
-        fullError: JSON.stringify(apiError, Object.getOwnPropertyNames(apiError))
-      });
+      // Log full error details - CRITICAL for debugging
+      console.error(`❌ [API] FAILED for deliverable #${index + 1}:`);
+      console.error(`❌ [API] Status:`, apiError.status || apiError.statusCode);
+      console.error(`❌ [API] Message:`, apiError.message);
+      console.error(`❌ [API] Error object:`, apiError.error);
+      console.error(`❌ [API] Type:`, apiError.type);
+      console.error(`❌ [API] Code:`, apiError.code);
+      console.error(`❌ [API] Model used:`, ANTHROPIC_MODEL);
+      console.error(`❌ [API] Full error:`, JSON.stringify(apiError, Object.getOwnPropertyNames(apiError), 2));
       
       // Handle Anthropic API errors specifically
       if (apiError.status === 401 || apiError.statusCode === 401 || apiError.message?.includes('authentication') || apiError.message?.includes('API key')) {
