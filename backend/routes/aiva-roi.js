@@ -35,7 +35,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
  * Generates comprehensive, personalized content for all 5 deliverables
  * Public endpoint - no authentication required
  */
-router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
+router.post('/generate-deliverable-content', optionalAuth, async (req, res, next) => {
   try {
     const {
       jobTitle,
@@ -352,6 +352,18 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res) => {
     if (error.stack) errorResponse.stack = error.stack;
     
     res.status(statusCode).json(errorResponse);
+  } catch (outerError) {
+    // Catch any errors that escape the inner try/catch
+    console.error('❌ CRITICAL: Unhandled error in generate-deliverable-content:', outerError);
+    console.error('❌ CRITICAL Stack:', outerError.stack);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: outerError.message,
+      model: ANTHROPIC_MODEL,
+      hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+      type: outerError.name,
+      stack: outerError.stack
+    });
   }
 });
 
