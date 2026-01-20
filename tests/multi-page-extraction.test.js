@@ -51,7 +51,7 @@ test.describe('Multi-Page Company Context Extraction', () => {
     console.log('📡 Step 3: Testing multi-page extraction endpoint...');
     console.log(`   Using API URL: ${API_URL}`);
     
-    const extractionResponse = await request.post(`${apiUrl}/api/aiva/fetch-multi-page-context`, {
+    const extractionResponse = await request.post(`${API_URL}/api/aiva/fetch-multi-page-context`, {
       data: {
         websiteURL: testURL
       },
@@ -60,6 +60,12 @@ test.describe('Multi-Page Company Context Extraction', () => {
       }
     });
 
+    if (!extractionResponse.ok()) {
+      const errorText = await extractionResponse.text();
+      console.error(`❌ API Error (${extractionResponse.status()}):`, errorText.substring(0, 500));
+      throw new Error(`API request failed: ${extractionResponse.status()} ${extractionResponse.statusText()}\n${errorText.substring(0, 500)}`);
+    }
+    
     expect(extractionResponse.ok()).toBeTruthy();
     
     const extractionData = await extractionResponse.json();
