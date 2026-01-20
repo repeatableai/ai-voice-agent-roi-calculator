@@ -30,6 +30,14 @@ module.exports = defineConfig({
         viewport: { width: 1280, height: 720 },
       },
     },
+    {
+      name: 'multi-page-tests',
+      testMatch: '**/multi-page-*.test.js',
+      use: {
+        video: 'on', // Video for multi-page tests
+        viewport: { width: 1280, height: 720 },
+      },
+    },
   ],
   webServer: undefined, // We're testing against deployed URL
 });

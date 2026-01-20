@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const fetch = require('node-fetch');
 const db = require('../db/database');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
 
@@ -889,6 +890,301 @@ router.post('/generate-voice-agent-content', async (req, res) => {
     console.error('Error generating voice agent content:', error);
     res.status(500).json({
       error: 'Failed to generate voice agent content',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * Helper function to fetch content from a URL using Jina Reader API
+ */
+async function fetchViaJina(url) {
+  try {
+    // Normalize URL
+    let normalizedUrl = url.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      normalizedUrl = 'https://' + normalizedUrl;
+    }
+    
+    const jinaURL = `https://r.jina.ai/${normalizedUrl}`;
+    const response = await fetch(jinaURL, { timeout: 30000 });
+    
+    if (!response.ok) {
+      throw new Error(`Jina Reader API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const markdown = await response.text();
+    return markdown;
+  } catch (error) {
+    console.error(`❌ Failed to fetch ${url} via Jina:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to identify key pages to fetch from homepage content
+ */
+async function identifyKeyPages(homepageMarkdown, baseURL) {
+  try {
+    if (!anthropic) {
+      console.warn('⚠️ Anthropic not available, skipping page discovery');
+      return [];
+    }
+
+    // Extract links from markdown (simple regex for common patterns)
+    const linkPatterns = [
+      /\[([^\]]+)\]\(([^)]+)\)/g, // Markdown links
+      /(?:href|src)=["']([^"']+)["']/gi, // HTML href/src attributes
+      /(?:https?:\/\/[^\s]+)/gi // Direct URLs
+    ];
+
+    const links = new Set();
+    linkPatterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.exec(homepageMarkdown)) !== null) {
+        const url = match[2] || match[1] || match[0];
+        if (url && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
+          // Relative URL
+          const cleanUrl = url.split('?')[0].split('#')[0]; // Remove query params and hash
+          if (cleanUrl.startsWith('/') && cleanUrl.length > 1) {
+            links.add(cleanUrl);
+          }
+        }
+      }
+    });
+
+    // Use AI to identify the most relevant pages
+    const discoveryPrompt = `You are analyzing a company website homepage to identify the most important pages to fetch for comprehensive company research.
+
+HOMEPAGE CONTENT (first 3000 characters):
+${homepageMarkdown.substring(0, 3000)}
+
+AVAILABLE LINKS FOUND:
+${Array.from(links).slice(0, 20).join('\n')}
+
+Identify the 3-5 most important pages that would contain:
+1. Company information (About, About Us, Company)
+2. Products/Services details (Products, Services, Solutions, What We Do)
+3. Company size/team info (Team, Careers, Contact)
+4. Pricing/business model (Pricing, Plans, How It Works)
+5. Recent news/updates (News, Blog, Press, Updates)
+
+Return ONLY valid JSON array of relative URLs (starting with /), like:
+["/about", "/products", "/pricing"]
+
+If no relevant pages found, return empty array: []`;
+
+    const message = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 500,
+      temperature: 0.3,
+      messages: [{
+        role: 'user',
+        content: discoveryPrompt
+      }]
+    });
+
+    const responseText = message.content[0].text;
+    let keyPages = [];
+    
+    try {
+      const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      keyPages = JSON.parse(cleanedResponse);
+      
+      // Validate and filter
+      keyPages = keyPages
+        .filter(page => typeof page === 'string' && page.startsWith('/'))
+        .slice(0, 5); // Limit to 5 pages max
+    } catch (parseError) {
+      console.warn('⚠️ Failed to parse key pages JSON, using empty array');
+      keyPages = [];
+    }
+
+    console.log(`🔍 Identified ${keyPages.length} key pages:`, keyPages);
+    return keyPages;
+  } catch (error) {
+    console.error('❌ Error identifying key pages:', error);
+    return [];
+  }
+}
+
+/**
+ * POST /api/aiva/fetch-multi-page-context
+ * Fetches multiple pages from a website and extracts comprehensive company context
+ */
+router.post('/fetch-multi-page-context', optionalAuth, async (req, res) => {
+  try {
+    const { websiteURL } = req.body;
+
+    if (!websiteURL || !websiteURL.trim()) {
+      return res.status(400).json({
+        error: 'websiteURL is required'
+      });
+    }
+
+    console.log(`🌐 Starting multi-page fetch for: ${websiteURL}`);
+
+    // Step 1: Fetch homepage
+    let homepageMarkdown;
+    try {
+      homepageMarkdown = await fetchViaJina(websiteURL);
+      console.log(`✅ Homepage fetched: ${homepageMarkdown.length} chars`);
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Failed to fetch homepage',
+        details: error.message
+      });
+    }
+
+    // Step 2: Identify key pages to fetch
+    const keyPages = await identifyKeyPages(homepageMarkdown, websiteURL);
+    
+    // Step 3: Fetch key pages in parallel (with homepage)
+    const pagesToFetch = [
+      { url: websiteURL, content: homepageMarkdown, isHomepage: true }
+    ];
+
+    if (keyPages.length > 0) {
+      console.log(`📄 Fetching ${keyPages.length} additional pages...`);
+      const pagePromises = keyPages.map(async (pagePath) => {
+        try {
+          const fullURL = websiteURL.endsWith('/') 
+            ? `${websiteURL.slice(0, -1)}${pagePath}`
+            : `${websiteURL}${pagePath}`;
+          const content = await fetchViaJina(fullURL);
+          console.log(`✅ Fetched ${pagePath}: ${content.length} chars`);
+          return { url: fullURL, content, isHomepage: false, path: pagePath };
+        } catch (error) {
+          console.warn(`⚠️ Failed to fetch ${pagePath}:`, error.message);
+          return null; // Return null for failed fetches
+        }
+      });
+
+      const fetchedPages = await Promise.all(pagePromises);
+      pagesToFetch.push(...fetchedPages.filter(p => p !== null));
+    }
+
+    console.log(`✅ Successfully fetched ${pagesToFetch.length} pages total`);
+
+    // Step 4: Combine content
+    const combinedContent = pagesToFetch
+      .map((page, index) => {
+        const pageLabel = page.isHomepage ? 'HOMEPAGE' : `PAGE: ${page.path || page.url}`;
+        return `\n\n=== ${pageLabel} ===\n\n${page.content}`;
+      })
+      .join('\n\n');
+
+    console.log(`📦 Combined content: ${combinedContent.length} chars from ${pagesToFetch.length} pages`);
+
+    // Step 5: Extract company context from combined content
+    // Call the existing extraction endpoint logic
+    if (!anthropic) {
+      return res.status(500).json({
+        error: 'AI service not available',
+        details: 'Anthropic client initialization failed'
+      });
+    }
+
+    const extractionPrompt = `You are analyzing a company website (multiple pages) to extract key information for a personalized ROI analysis.
+
+WEBSITE CONTENT FROM ${pagesToFetch.length} PAGES:
+${combinedContent.substring(0, 10000)} // Increased to 10000 for multi-page content
+
+Extract the following information about this company:
+
+1. **Core Business/Products**: What does this company actually do? What are their main products or services? Be specific and detailed.
+
+2. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
+
+3. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
+
+4. **Industry**: What industry or industries does this company operate in? Be specific.
+
+5. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+
+6. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+
+7. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
+
+Return ONLY valid JSON in this exact structure:
+{
+  "coreBusiness": "Detailed description of what the company does and their main products/services",
+  "targetMarket": "Description of their customers and market",
+  "companySize": "Estimated or stated company size (e.g., '50-100 employees', 'Enterprise', 'Startup')",
+  "industry": "Specific industry or industries",
+  "keyDifferentiators": "What makes them unique or competitive advantages",
+  "recentNews": "Recent announcements or news, or 'None found'",
+  "companyCulture": "Company values, mission, or culture, or 'Not specified'"
+}
+
+Be thorough and specific. Extract real, meaningful information that will help personalize content for this company.`;
+
+    const message = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2000,
+      temperature: 0.3,
+      messages: [{
+        role: 'user',
+        content: extractionPrompt
+      }]
+    });
+
+    const responseText = message.content[0].text;
+    
+    // Parse JSON response
+    let extractedInfo;
+    try {
+      const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      extractedInfo = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error('Failed to parse extraction JSON:', parseError);
+      extractedInfo = {
+        coreBusiness: combinedContent.substring(0, 500),
+        targetMarket: 'Not specified',
+        companySize: null,
+        industry: 'Not specified',
+        keyDifferentiators: 'Not specified',
+        recentNews: null,
+        companyCulture: 'Not specified'
+      };
+    }
+
+    // Include rawContent from all pages (truncated to reasonable size)
+    const companyContext = {
+      rawContent: combinedContent.substring(0, 10000), // Increased for multi-page
+      coreBusiness: extractedInfo.coreBusiness || 'Not specified',
+      targetMarket: extractedInfo.targetMarket || 'Not specified',
+      companySize: extractedInfo.companySize || null,
+      industry: extractedInfo.industry || 'Not specified',
+      keyDifferentiators: extractedInfo.keyDifferentiators || 'Not specified',
+      recentNews: extractedInfo.recentNews || null,
+      companyCulture: extractedInfo.companyCulture || 'Not specified',
+      pagesFetched: pagesToFetch.length,
+      pagesFetchedDetails: pagesToFetch.map(p => ({
+        url: p.url,
+        isHomepage: p.isHomepage,
+        path: p.path || '/',
+        contentLength: p.content.length
+      }))
+    };
+
+    console.log('✅ Multi-page company context extracted:', {
+      pagesFetched: companyContext.pagesFetched,
+      hasCoreBusiness: !!companyContext.coreBusiness,
+      hasTargetMarket: !!companyContext.targetMarket,
+      companySize: companyContext.companySize,
+      industry: companyContext.industry
+    });
+
+    res.json({
+      success: true,
+      companyContext
+    });
+
+  } catch (error) {
+    console.error('Error fetching multi-page context:', error);
+    res.status(500).json({
+      error: 'Failed to fetch multi-page context',
       details: error.message
     });
   }

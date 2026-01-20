@@ -341,6 +341,45 @@ export default function VoiceROICalculator() {
     try {
       console.log(`🔍 Fetching company context from: ${websiteURL}`);
       
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Try multi-page discovery first (new enhanced method)
+      try {
+        console.log('🌐 Attempting multi-page discovery...');
+        const multiPageResponse = await fetch(`${apiUrl}/api/aiva/fetch-multi-page-context`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            websiteURL
+          })
+        });
+
+        if (multiPageResponse.ok) {
+          const multiPageData = await multiPageResponse.json();
+          if (multiPageData.success && multiPageData.companyContext) {
+            console.log('✅ Multi-page company context extracted:', {
+              pagesFetched: multiPageData.companyContext.pagesFetched,
+              hasCoreBusiness: !!multiPageData.companyContext.coreBusiness,
+              hasTargetMarket: !!multiPageData.companyContext.targetMarket,
+              companySize: multiPageData.companyContext.companySize,
+              industry: multiPageData.companyContext.industry,
+              hasKeyDifferentiators: !!multiPageData.companyContext.keyDifferentiators
+            });
+            return multiPageData.companyContext;
+          }
+        } else {
+          console.warn('⚠️ Multi-page discovery failed, falling back to single-page extraction');
+        }
+      } catch (multiPageError) {
+        console.warn('⚠️ Multi-page discovery error, falling back to single-page:', multiPageError);
+      }
+
+      // Fallback to single-page extraction
+      console.log('📄 Falling back to single-page extraction...');
+      
       // Use Jina Reader API to fetch website content (free, no API key needed)
       const jinaURL = `https://r.jina.ai/${websiteURL}`;
       const response = await fetch(jinaURL);
@@ -349,8 +388,6 @@ export default function VoiceROICalculator() {
       console.log(`✅ Fetched ${markdown.length} chars of markdown from website`);
 
       // Use backend AI endpoint to intelligently extract company information
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      
       try {
         const extractResponse = await fetch(`${apiUrl}/api/aiva/extract-company-context`, {
           method: 'POST',
