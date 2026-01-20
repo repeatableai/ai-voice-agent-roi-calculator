@@ -119,7 +119,7 @@ test.describe('Multi-Page Company Context Extraction', () => {
   test('should handle single-page fallback gracefully', async ({ request }) => {
     // Test with a simple site that might not have multiple pages
     const testURL = 'https://example.com';
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:3003';
+    const apiUrl = process.env.VITE_API_URL || process.env.TEST_API_URL || 'http://localhost:3003';
     
     console.log(`📡 Testing fallback with: ${testURL}`);
     
@@ -131,6 +131,12 @@ test.describe('Multi-Page Company Context Extraction', () => {
         'Content-Type': 'application/json'
       }
     });
+
+    if (!extractionResponse.ok()) {
+      const errorText = await extractionResponse.text();
+      console.error(`❌ API Error (${extractionResponse.status()}):`, errorText.substring(0, 500));
+      throw new Error(`API request failed: ${extractionResponse.status()} ${extractionResponse.statusText()}`);
+    }
 
     // Should still succeed even if only homepage is fetched
     expect(extractionResponse.ok()).toBeTruthy();
@@ -146,7 +152,7 @@ test.describe('Multi-Page Company Context Extraction', () => {
 
   test('should extract meaningful context from paycor.com', async ({ request }) => {
     const testURL = 'https://paycor.com';
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:3003';
+    const apiUrl = process.env.VITE_API_URL || process.env.TEST_API_URL || 'http://localhost:3003';
     
     console.log(`📡 Testing extraction with: ${testURL}`);
     
