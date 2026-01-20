@@ -3,6 +3,9 @@
 
 const { test, expect } = require('@playwright/test');
 
+// Use Render URL by default - this is what users will actually use
+const API_URL = process.env.TEST_API_URL || 'https://aiva-y723.onrender.com';
+
 test.describe('Multi-Page Company Context Extraction', () => {
   test('should discover and fetch multiple pages from autopayplus.com', async ({ page, request }) => {
     const testURL = 'https://autopayplus.com';
@@ -46,7 +49,7 @@ test.describe('Multi-Page Company Context Extraction', () => {
 
     // Step 3: Test the multi-page extraction endpoint
     console.log('📡 Step 3: Testing multi-page extraction endpoint...');
-    const apiUrl = process.env.VITE_API_URL || 'http://localhost:3003';
+    console.log(`   Using API URL: ${API_URL}`);
     
     const extractionResponse = await request.post(`${apiUrl}/api/aiva/fetch-multi-page-context`, {
       data: {
@@ -119,11 +122,11 @@ test.describe('Multi-Page Company Context Extraction', () => {
   test('should handle single-page fallback gracefully', async ({ request }) => {
     // Test with a simple site that might not have multiple pages
     const testURL = 'https://example.com';
-    const apiUrl = process.env.VITE_API_URL || process.env.TEST_API_URL || 'http://localhost:3003';
     
     console.log(`📡 Testing fallback with: ${testURL}`);
+    console.log(`   Using API URL: ${API_URL}`);
     
-    const extractionResponse = await request.post(`${apiUrl}/api/aiva/fetch-multi-page-context`, {
+    const extractionResponse = await request.post(`${API_URL}/api/aiva/fetch-multi-page-context`, {
       data: {
         websiteURL: testURL
       },
@@ -152,11 +155,11 @@ test.describe('Multi-Page Company Context Extraction', () => {
 
   test('should extract meaningful context from paycor.com', async ({ request }) => {
     const testURL = 'https://paycor.com';
-    const apiUrl = process.env.VITE_API_URL || process.env.TEST_API_URL || 'http://localhost:3003';
     
     console.log(`📡 Testing extraction with: ${testURL}`);
+    console.log(`   Using API URL: ${API_URL}`);
     
-    const extractionResponse = await request.post(`${apiUrl}/api/aiva/fetch-multi-page-context`, {
+    const extractionResponse = await request.post(`${API_URL}/api/aiva/fetch-multi-page-context`, {
       data: {
         websiteURL: testURL
       },
