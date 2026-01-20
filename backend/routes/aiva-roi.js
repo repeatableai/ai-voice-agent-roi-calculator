@@ -922,89 +922,213 @@ async function fetchViaJina(url) {
 }
 
 /**
- * Helper function to identify key pages to fetch from homepage content
+ * Helper function to extract ALL links from homepage content
+ * Uses comprehensive regex patterns to find links in markdown and HTML
  */
-async function identifyKeyPages(homepageMarkdown, baseURL) {
-  try {
-    if (!anthropic) {
-      console.warn('⚠️ Anthropic not available, skipping page discovery');
-      return [];
-    }
+function extractAllLinks(content) {
+  const links = new Set();
+  
+  // More comprehensive link extraction patterns
+  const linkPatterns = [
+    // Markdown links: [text](url)
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    // HTML href attributes: href="url" or href='url'
+    /href=["']([^"']+)["']/gi,
+    // HTML src attributes (for images/scripts that might link to pages)
+    /src=["']([^"']+)["']/gi,
+    // Direct URLs in text
+    /(?:https?:\/\/[^\s<>"']+)/gi,
+    // Relative paths in various formats
+    /(?:^|\s)(\/[^\s<>"']+)/gm,
+    // URLs in markdown without brackets
+    /(?:^|\s)(https?:\/\/[^\s]+)/gm
+  ];
 
-    // Extract links from markdown (simple regex for common patterns)
-    const linkPatterns = [
-      /\[([^\]]+)\]\(([^)]+)\)/g, // Markdown links
-      /(?:href|src)=["']([^"']+)["']/gi, // HTML href/src attributes
-      /(?:https?:\/\/[^\s]+)/gi // Direct URLs
-    ];
-
-    const links = new Set();
-    linkPatterns.forEach(pattern => {
-      let match;
-      while ((match = pattern.exec(homepageMarkdown)) !== null) {
-        const url = match[2] || match[1] || match[0];
-        if (url && !url.startsWith('http') && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
-          // Relative URL
-          const cleanUrl = url.split('?')[0].split('#')[0]; // Remove query params and hash
-          if (cleanUrl.startsWith('/') && cleanUrl.length > 1) {
+  linkPatterns.forEach(pattern => {
+    let match;
+    // Reset regex lastIndex to ensure we check the entire content
+    pattern.lastIndex = 0;
+    while ((match = pattern.exec(content)) !== null) {
+      // Extract URL from different match groups
+      const url = match[2] || match[1] || match[0];
+      if (url) {
+        // Clean and normalize URL
+        let cleanUrl = url.trim();
+        
+        // Remove query params, hash, and trailing slashes (except root)
+        cleanUrl = cleanUrl.split('?')[0].split('#')[0].replace(/\/$/, '');
+        
+        // Skip external URLs, mailto, tel, javascript, data URIs
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+          // Check if it's the same domain (we'll handle this later)
+          continue;
+        }
+        if (cleanUrl.startsWith('mailto:') || cleanUrl.startsWith('tel:') || 
+            cleanUrl.startsWith('javascript:') || cleanUrl.startsWith('data:')) {
+          continue;
+        }
+        
+        // Only add relative URLs that start with /
+        if (cleanUrl.startsWith('/') && cleanUrl.length > 1) {
+          // Filter out common non-page paths
+          const excludedPatterns = [
+            /\.(jpg|jpeg|png|gif|svg|webp|ico|pdf|zip|exe|dmg)$/i,
+            /^\/#/,
+            /^\/api\//,
+            /^\/static\//,
+            /^\/assets\//,
+            /^\/css\//,
+            /^\/js\//,
+            /^\/images\//,
+            /^\/img\//
+          ];
+          
+          const isExcluded = excludedPatterns.some(pattern => pattern.test(cleanUrl));
+          if (!isExcluded) {
             links.add(cleanUrl);
           }
         }
       }
-    });
+    }
+  });
 
-    // Use AI to identify the most relevant pages
-    const discoveryPrompt = `You are analyzing a company website homepage to identify the most important pages to fetch for comprehensive company research.
+  return Array.from(links);
+}
 
-HOMEPAGE CONTENT (first 3000 characters):
-${homepageMarkdown.substring(0, 3000)}
+/**
+ * Common page paths to try as fallback
+ */
+const COMMON_PAGE_PATHS = [
+  '/about',
+  '/about-us',
+  '/aboutus',
+  '/company',
+  '/products',
+  '/product',
+  '/services',
+  '/service',
+  '/solutions',
+  '/solution',
+  '/pricing',
+  '/plans',
+  '/team',
+  '/careers',
+  '/jobs',
+  '/contact',
+  '/contact-us',
+  '/blog',
+  '/news',
+  '/press',
+  '/media',
+  '/resources',
+  '/how-it-works',
+  '/features',
+  '/why-us',
+  '/testimonials',
+  '/case-studies',
+  '/customers',
+  '/partners'
+];
 
-AVAILABLE LINKS FOUND:
-${Array.from(links).slice(0, 20).join('\n')}
+/**
+ * Helper function to identify key pages to fetch from homepage content
+ * Now extracts ALL links and uses AI + fallback logic
+ */
+async function identifyKeyPages(homepageMarkdown, baseURL) {
+  try {
+    // Step 1: Extract ALL links from FULL homepage content (not just first 3000 chars)
+    console.log('🔍 Extracting all links from homepage...');
+    const allLinks = extractAllLinks(homepageMarkdown);
+    console.log(`✅ Found ${allLinks.length} unique links in homepage`);
 
-Identify the 3-5 most important pages that would contain:
-1. Company information (About, About Us, Company)
-2. Products/Services details (Products, Services, Solutions, What We Do)
-3. Company size/team info (Team, Careers, Contact)
-4. Pricing/business model (Pricing, Plans, How It Works)
-5. Recent news/updates (News, Blog, Press, Updates)
+    // Step 2: Use AI to identify the most relevant pages (if available)
+    let aiIdentifiedPages = [];
+    if (anthropic) {
+      try {
+        // Use more content for better context (up to 8000 chars)
+        const contentPreview = homepageMarkdown.length > 8000 
+          ? homepageMarkdown.substring(0, 8000) + '\n\n[... content truncated ...]'
+          : homepageMarkdown;
+
+        // Show more links to AI (up to 50)
+        const linksPreview = allLinks.slice(0, 50).join('\n');
+        
+        const discoveryPrompt = `You are analyzing a company website homepage to identify ALL important pages to fetch for comprehensive company research.
+
+HOMEPAGE CONTENT:
+${contentPreview}
+
+AVAILABLE LINKS FOUND (${allLinks.length} total):
+${linksPreview}
+${allLinks.length > 50 ? `\n... and ${allLinks.length - 50} more links ...` : ''}
+
+Identify ALL important pages (up to 10-15) that would contain:
+1. Company information (About, About Us, Company, Team, Leadership)
+2. Products/Services details (Products, Services, Solutions, What We Do, Features)
+3. Company size/team info (Team, Careers, Jobs, Contact, Locations)
+4. Pricing/business model (Pricing, Plans, How It Works, Get Started)
+5. Recent news/updates (News, Blog, Press, Media, Updates, Resources)
+6. Customer information (Testimonials, Case Studies, Customers, Partners)
 
 Return ONLY valid JSON array of relative URLs (starting with /), like:
-["/about", "/products", "/pricing"]
+["/about", "/products", "/services", "/pricing", "/team", "/careers", "/blog"]
 
-If no relevant pages found, return empty array: []`;
+Prioritize pages that are likely to contain substantial company information. Return as many relevant pages as you can find (up to 15).`;
 
-    const message = await anthropic.messages.create({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 500,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: discoveryPrompt
-      }]
-    });
+        const message = await anthropic.messages.create({
+          model: ANTHROPIC_MODEL,
+          max_tokens: 1000, // Increased for more pages
+          temperature: 0.3,
+          messages: [{
+            role: 'user',
+            content: discoveryPrompt
+          }]
+        });
 
-    const responseText = message.content[0].text;
-    let keyPages = [];
-    
-    try {
-      const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      keyPages = JSON.parse(cleanedResponse);
-      
-      // Validate and filter
-      keyPages = keyPages
-        .filter(page => typeof page === 'string' && page.startsWith('/'))
-        .slice(0, 5); // Limit to 5 pages max
-    } catch (parseError) {
-      console.warn('⚠️ Failed to parse key pages JSON, using empty array');
-      keyPages = [];
+        const responseText = message.content[0].text;
+        const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        aiIdentifiedPages = JSON.parse(cleanedResponse);
+        
+        // Validate and filter
+        aiIdentifiedPages = aiIdentifiedPages
+          .filter(page => typeof page === 'string' && page.startsWith('/'))
+          .filter(page => allLinks.includes(page)) // Only include pages that actually exist
+          .slice(0, 15); // Increased limit to 15 pages
+        
+        console.log(`🤖 AI identified ${aiIdentifiedPages.length} pages:`, aiIdentifiedPages);
+      } catch (aiError) {
+        console.warn('⚠️ AI page discovery failed:', aiError.message);
+        // Continue with fallback logic
+      }
     }
 
-    console.log(`🔍 Identified ${keyPages.length} key pages:`, keyPages);
-    return keyPages;
+    // Step 3: Fallback - try common page paths that exist in the links
+    const fallbackPages = COMMON_PAGE_PATHS.filter(path => allLinks.includes(path));
+    console.log(`📋 Found ${fallbackPages.length} common pages in links:`, fallbackPages);
+
+    // Step 4: Combine AI-identified pages with fallback pages, remove duplicates
+    const combinedPages = [...new Set([...aiIdentifiedPages, ...fallbackPages])];
+    
+    // Step 5: If we still don't have enough pages, try common paths even if not in links
+    // (they might exist but not be linked from homepage)
+    if (combinedPages.length < 5 && anthropic) {
+      console.log('📋 Trying additional common paths as fallback...');
+      const additionalPages = COMMON_PAGE_PATHS
+        .filter(path => !combinedPages.includes(path))
+        .slice(0, 5 - combinedPages.length);
+      combinedPages.push(...additionalPages);
+    }
+
+    // Limit to 15 pages max for performance
+    const finalPages = combinedPages.slice(0, 15);
+    
+    console.log(`✅ Final page list: ${finalPages.length} pages to fetch:`, finalPages);
+    return finalPages;
   } catch (error) {
     console.error('❌ Error identifying key pages:', error);
-    return [];
+    // Return common fallback pages if everything fails
+    console.log('📋 Using common fallback pages due to error');
+    return COMMON_PAGE_PATHS.slice(0, 10);
   }
 }
 
@@ -1038,30 +1162,71 @@ router.post('/fetch-multi-page-context', optionalAuth, async (req, res) => {
 
     // Step 2: Identify key pages to fetch
     const keyPages = await identifyKeyPages(homepageMarkdown, websiteURL);
+    console.log(`🔍 Identified ${keyPages.length} pages to fetch`);
     
     // Step 3: Fetch key pages in parallel (with homepage)
     const pagesToFetch = [
-      { url: websiteURL, content: homepageMarkdown, isHomepage: true }
+      { url: websiteURL, content: homepageMarkdown, isHomepage: true, path: '/' }
     ];
 
     if (keyPages.length > 0) {
-      console.log(`📄 Fetching ${keyPages.length} additional pages...`);
-      const pagePromises = keyPages.map(async (pagePath) => {
-        try {
-          const fullURL = websiteURL.endsWith('/') 
-            ? `${websiteURL.slice(0, -1)}${pagePath}`
-            : `${websiteURL}${pagePath}`;
-          const content = await fetchViaJina(fullURL);
-          console.log(`✅ Fetched ${pagePath}: ${content.length} chars`);
-          return { url: fullURL, content, isHomepage: false, path: pagePath };
-        } catch (error) {
-          console.warn(`⚠️ Failed to fetch ${pagePath}:`, error.message);
-          return null; // Return null for failed fetches
-        }
-      });
+      console.log(`📄 Fetching ${keyPages.length} additional pages in parallel...`);
+      
+      // Fetch pages in batches to avoid overwhelming the server
+      const BATCH_SIZE = 5;
+      const batches = [];
+      for (let i = 0; i < keyPages.length; i += BATCH_SIZE) {
+        batches.push(keyPages.slice(i, i + BATCH_SIZE));
+      }
+      
+      for (const batch of batches) {
+        const pagePromises = batch.map(async (pagePath) => {
+          try {
+            // Normalize base URL
+            let baseURL = websiteURL.trim();
+            if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+              baseURL = 'https://' + baseURL;
+            }
+            baseURL = baseURL.replace(/\/$/, ''); // Remove trailing slash
+            
+            const fullURL = `${baseURL}${pagePath}`;
+            console.log(`📥 Fetching: ${fullURL}`);
+            
+            const content = await fetchViaJina(fullURL);
+            console.log(`✅ Fetched ${pagePath}: ${content.length} chars`);
+            
+            return { 
+              url: fullURL, 
+              content, 
+              isHomepage: false, 
+              path: pagePath,
+              success: true
+            };
+          } catch (error) {
+            console.warn(`⚠️ Failed to fetch ${pagePath}:`, error.message);
+            return { 
+              url: null, 
+              content: null, 
+              isHomepage: false, 
+              path: pagePath,
+              success: false,
+              error: error.message
+            };
+          }
+        });
 
-      const fetchedPages = await Promise.all(pagePromises);
-      pagesToFetch.push(...fetchedPages.filter(p => p !== null));
+        const batchResults = await Promise.all(pagePromises);
+        // Only add successfully fetched pages
+        const successfulPages = batchResults.filter(p => p.success && p.content);
+        pagesToFetch.push(...successfulPages);
+        
+        console.log(`✅ Batch complete: ${successfulPages.length}/${batch.length} pages fetched successfully`);
+        
+        // Small delay between batches to be respectful
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
     }
 
     console.log(`✅ Successfully fetched ${pagesToFetch.length} pages total`);
