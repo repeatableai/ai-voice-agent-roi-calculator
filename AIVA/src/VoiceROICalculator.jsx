@@ -339,14 +339,53 @@ export default function VoiceROICalculator() {
     if (!websiteURL) return null;
 
     try {
+      console.log(`🔍 Fetching company context from: ${websiteURL}`);
+      
       // Use Jina Reader API to fetch website content (free, no API key needed)
       const jinaURL = `https://r.jina.ai/${websiteURL}`;
       const response = await fetch(jinaURL);
       const markdown = await response.text();
 
-      // Extract key information from the markdown content and ensure all values are strings
+      console.log(`✅ Fetched ${markdown.length} chars of markdown from website`);
+
+      // Use backend AI endpoint to intelligently extract company information
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      
+      try {
+        const extractResponse = await fetch(`${apiUrl}/api/aiva/extract-company-context`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            websiteURL,
+            rawMarkdown: markdown
+          })
+        });
+
+        if (extractResponse.ok) {
+          const extractData = await extractResponse.json();
+          if (extractData.success && extractData.companyContext) {
+            console.log('✅ AI-extracted company context:', {
+              hasCoreBusiness: !!extractData.companyContext.coreBusiness,
+              hasTargetMarket: !!extractData.companyContext.targetMarket,
+              companySize: extractData.companyContext.companySize,
+              industry: extractData.companyContext.industry,
+              hasKeyDifferentiators: !!extractData.companyContext.keyDifferentiators
+            });
+            return extractData.companyContext;
+          }
+        } else {
+          console.warn('⚠️ AI extraction failed, falling back to basic extraction');
+        }
+      } catch (extractError) {
+        console.warn('⚠️ AI extraction error, falling back to basic extraction:', extractError);
+      }
+
+      // Fallback to basic extraction if AI extraction fails
       const context = {
-        rawContent: markdown ? String(markdown).substring(0, 3000) : null, // First 3000 chars, ensure string
+        rawContent: markdown ? String(markdown).substring(0, 5000) : null, // Increased to 5000
         companySize: extractCompanySize(markdown) ? String(extractCompanySize(markdown)) : null,
         products: extractProducts(markdown) ? String(extractProducts(markdown)).substring(0, 500) : null,
         industry: extractIndustryDetails(markdown) ? String(extractIndustryDetails(markdown)).substring(0, 500) : null,
@@ -365,9 +404,10 @@ export default function VoiceROICalculator() {
         return null;
       }
 
+      console.log('✅ Using fallback extraction');
       return context;
     } catch (error) {
-      console.error('Failed to fetch company context:', error);
+      console.error('❌ Failed to fetch company context:', error);
       return null;
     }
   };
@@ -403,13 +443,17 @@ export default function VoiceROICalculator() {
       let sanitizedContext = null;
       if (companyContext) {
         try {
-          // Only include serializable properties
+          // Include all properties from AI extraction or fallback extraction
           sanitizedContext = {
-            ...(companyContext.rawContent && { rawContent: String(companyContext.rawContent).substring(0, 3000) }),
+            ...(companyContext.rawContent && { rawContent: String(companyContext.rawContent).substring(0, 5000) }), // Increased to 5000
+            ...(companyContext.coreBusiness && { coreBusiness: String(companyContext.coreBusiness).substring(0, 1000) }),
+            ...(companyContext.targetMarket && { targetMarket: String(companyContext.targetMarket).substring(0, 500) }),
             ...(companyContext.companySize && { companySize: String(companyContext.companySize) }),
-            ...(companyContext.products && { products: String(companyContext.products).substring(0, 500) }),
+            ...(companyContext.products && { products: String(companyContext.products).substring(0, 500) }), // Legacy field
             ...(companyContext.industry && { industry: String(companyContext.industry).substring(0, 500) }),
-            ...(companyContext.recentNews && { recentNews: String(companyContext.recentNews).substring(0, 500) })
+            ...(companyContext.keyDifferentiators && { keyDifferentiators: String(companyContext.keyDifferentiators).substring(0, 500) }),
+            ...(companyContext.recentNews && { recentNews: String(companyContext.recentNews).substring(0, 500) }),
+            ...(companyContext.companyCulture && { companyCulture: String(companyContext.companyCulture).substring(0, 500) })
           };
           // If empty, set to null
           if (Object.keys(sanitizedContext).length === 0) {

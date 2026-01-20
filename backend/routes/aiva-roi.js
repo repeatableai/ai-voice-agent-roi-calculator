@@ -168,20 +168,33 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         // Only keep serializable string properties
         const sanitized = {};
         
+        // Include all fields from AI extraction or fallback
         if (rawCompanyContext.rawContent !== undefined && rawCompanyContext.rawContent !== null) {
-          sanitized.rawContent = String(rawCompanyContext.rawContent).substring(0, 3000);
+          sanitized.rawContent = String(rawCompanyContext.rawContent).substring(0, 5000); // Increased to 5000
+        }
+        if (rawCompanyContext.coreBusiness !== undefined && rawCompanyContext.coreBusiness !== null) {
+          sanitized.coreBusiness = String(rawCompanyContext.coreBusiness).substring(0, 1000);
+        }
+        if (rawCompanyContext.targetMarket !== undefined && rawCompanyContext.targetMarket !== null) {
+          sanitized.targetMarket = String(rawCompanyContext.targetMarket).substring(0, 500);
         }
         if (rawCompanyContext.companySize !== undefined && rawCompanyContext.companySize !== null) {
           sanitized.companySize = String(rawCompanyContext.companySize);
         }
         if (rawCompanyContext.products !== undefined && rawCompanyContext.products !== null) {
-          sanitized.products = String(rawCompanyContext.products).substring(0, 500);
+          sanitized.products = String(rawCompanyContext.products).substring(0, 500); // Legacy field
         }
         if (rawCompanyContext.industry !== undefined && rawCompanyContext.industry !== null) {
           sanitized.industry = String(rawCompanyContext.industry).substring(0, 500);
         }
+        if (rawCompanyContext.keyDifferentiators !== undefined && rawCompanyContext.keyDifferentiators !== null) {
+          sanitized.keyDifferentiators = String(rawCompanyContext.keyDifferentiators).substring(0, 500);
+        }
         if (rawCompanyContext.recentNews !== undefined && rawCompanyContext.recentNews !== null) {
           sanitized.recentNews = String(rawCompanyContext.recentNews).substring(0, 500);
+        }
+        if (rawCompanyContext.companyCulture !== undefined && rawCompanyContext.companyCulture !== null) {
+          sanitized.companyCulture = String(rawCompanyContext.companyCulture).substring(0, 500);
         }
         
         // If empty, set to null
@@ -207,6 +220,20 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
     }
     
     console.log('🚀 [ROUTE] Request received:', { jobTitle, industry, companyName, deliverableCount: deliverables?.length, hasCompanyContext: !!companyContext });
+    
+    // Log company context details for debugging
+    if (companyContext) {
+      console.log('📊 [ROUTE] Company Context Details:', {
+        hasRawContent: !!companyContext.rawContent,
+        rawContentLength: companyContext.rawContent?.length || 0,
+        hasCoreBusiness: !!companyContext.coreBusiness,
+        coreBusinessPreview: companyContext.coreBusiness?.substring(0, 100) || 'N/A',
+        hasTargetMarket: !!companyContext.targetMarket,
+        companySize: companyContext.companySize || 'N/A',
+        industry: companyContext.industry || 'N/A',
+        hasKeyDifferentiators: !!companyContext.keyDifferentiators
+      });
+    }
 
     // Validate required fields
     if (!jobTitle || !industry || !companyName || !deliverables || deliverables.length === 0) {
@@ -868,6 +895,130 @@ router.post('/generate-voice-agent-content', async (req, res) => {
 });
 
 /**
+ * POST /api/aiva/extract-company-context
+ * Uses AI to intelligently extract company information from website content
+ * This provides much better context than regex-based extraction
+ */
+router.post('/extract-company-context', optionalAuth, async (req, res) => {
+  try {
+    const { websiteURL, rawMarkdown } = req.body;
+
+    if (!rawMarkdown || !rawMarkdown.trim()) {
+      return res.status(400).json({
+        error: 'rawMarkdown is required'
+      });
+    }
+
+    if (!anthropic) {
+      return res.status(500).json({
+        error: 'AI service not available',
+        details: 'Anthropic client initialization failed'
+      });
+    }
+
+    console.log(`🔍 Extracting company context from website: ${websiteURL || 'unknown'}`);
+    console.log(`📄 Raw markdown length: ${rawMarkdown.length} chars`);
+
+    // Use AI to extract structured company information
+    const extractionPrompt = `You are analyzing a company website to extract key information for a personalized ROI analysis.
+
+WEBSITE CONTENT (first 5000 characters):
+${rawMarkdown.substring(0, 5000)}
+
+Extract the following information about this company:
+
+1. **Core Business/Products**: What does this company actually do? What are their main products or services? Be specific and detailed.
+
+2. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
+
+3. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
+
+4. **Industry**: What industry or industries does this company operate in? Be specific.
+
+5. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+
+6. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+
+7. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
+
+Return ONLY valid JSON in this exact structure:
+{
+  "coreBusiness": "Detailed description of what the company does and their main products/services",
+  "targetMarket": "Description of their customers and market",
+  "companySize": "Estimated or stated company size (e.g., '50-100 employees', 'Enterprise', 'Startup')",
+  "industry": "Specific industry or industries",
+  "keyDifferentiators": "What makes them unique or competitive advantages",
+  "recentNews": "Recent announcements or news, or 'None found'",
+  "companyCulture": "Company values, mission, or culture, or 'Not specified'"
+}
+
+Be thorough and specific. Extract real, meaningful information that will help personalize content for this company.`;
+
+    const message = await anthropic.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2000,
+      temperature: 0.3, // Lower temperature for more factual extraction
+      messages: [{
+        role: 'user',
+        content: extractionPrompt
+      }]
+    });
+
+    const responseText = message.content[0].text;
+    
+    // Parse JSON response
+    let extractedInfo;
+    try {
+      const cleanedResponse = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      extractedInfo = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error('Failed to parse extraction JSON:', parseError);
+      // Fallback to basic extraction
+      extractedInfo = {
+        coreBusiness: rawMarkdown.substring(0, 500),
+        targetMarket: 'Not specified',
+        companySize: null,
+        industry: 'Not specified',
+        keyDifferentiators: 'Not specified',
+        recentNews: null,
+        companyCulture: 'Not specified'
+      };
+    }
+
+    // Also include rawContent for full context in prompts
+    const companyContext = {
+      rawContent: rawMarkdown.substring(0, 5000), // Increased to 5000 chars for better context
+      coreBusiness: extractedInfo.coreBusiness || 'Not specified',
+      targetMarket: extractedInfo.targetMarket || 'Not specified',
+      companySize: extractedInfo.companySize || null,
+      industry: extractedInfo.industry || 'Not specified',
+      keyDifferentiators: extractedInfo.keyDifferentiators || 'Not specified',
+      recentNews: extractedInfo.recentNews || null,
+      companyCulture: extractedInfo.companyCulture || 'Not specified'
+    };
+
+    console.log('✅ Company context extracted:', {
+      hasCoreBusiness: !!companyContext.coreBusiness,
+      hasTargetMarket: !!companyContext.targetMarket,
+      companySize: companyContext.companySize,
+      industry: companyContext.industry
+    });
+
+    res.json({
+      success: true,
+      companyContext
+    });
+
+  } catch (error) {
+    console.error('Error extracting company context:', error);
+    res.status(500).json({
+      error: 'Failed to extract company context',
+      details: error.message
+    });
+  }
+});
+
+/**
  * GET /api/aiva/model-check
  * Verify which model is configured (for debugging deployments)
  */
@@ -1126,17 +1277,48 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
  */
 function buildSingleDeliverablePrompt({ deliverable, index, jobTitle, industry, companyName, companyContext }) {
   // Safely extract companyContext properties, ensuring they're strings and don't break template strings
+  const safeCoreBusiness = companyContext?.coreBusiness ? String(companyContext.coreBusiness).substring(0, 800) : (companyContext?.products ? String(companyContext.products).substring(0, 500) : 'Not specified');
+  const safeTargetMarket = companyContext?.targetMarket ? String(companyContext.targetMarket).substring(0, 400) : 'Not specified';
   const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
-  const safeProducts = companyContext?.products ? String(companyContext.products).substring(0, 200) : 'Not specified';
-  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 200) : industry;
-  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 200) : 'None found';
+  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 400) : industry;
+  const safeKeyDifferentiators = companyContext?.keyDifferentiators ? String(companyContext.keyDifferentiators).substring(0, 400) : 'Not specified';
+  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 400) : 'None found';
+  const safeCompanyCulture = companyContext?.companyCulture ? String(companyContext.companyCulture).substring(0, 400) : 'Not specified';
+  const safeRawContent = companyContext?.rawContent ? String(companyContext.rawContent).substring(0, 3000) : null;
   
   const contextSummary = companyContext ? `
-COMPANY RESEARCH FROM WEBSITE:
-- Company Size: ${safeCompanySize}
-- Products/Services: ${safeProducts}
-- Industry Details: ${safeIndustry}
-- Recent News: ${safeRecentNews}
+COMPANY RESEARCH FROM WEBSITE (USE THIS INFORMATION EXTENSIVELY THROUGHOUT YOUR RESPONSE):
+
+**Core Business/Products:**
+${safeCoreBusiness}
+
+**Target Market:**
+${safeTargetMarket}
+
+**Company Size:**
+${safeCompanySize}
+
+**Industry:**
+${safeIndustry}
+
+**Key Differentiators/Competitive Advantages:**
+${safeKeyDifferentiators}
+
+**Recent News/Updates:**
+${safeRecentNews}
+
+**Company Culture/Values:**
+${safeCompanyCulture}
+
+${safeRawContent ? `**Full Website Content (for additional context):**
+${safeRawContent.substring(0, 2000)}...` : ''}
+
+CRITICAL: You MUST reference specific details from the company research above throughout your response. Make the analysis feel custom-built for ${companyName} by:
+- Mentioning their specific products/services when relevant
+- Referencing their target market and customer base
+- Incorporating their key differentiators into scenarios
+- Using their industry context to make examples realistic
+- Referencing their company culture/values where appropriate
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}
@@ -1284,11 +1466,13 @@ ${frustrationSection}
 CRITICAL REQUIREMENTS:
 - Use "${companyName}" 8-12 times across all sections
 - Reference ${industry} context appropriately
+- **MANDATORY: Use the company research information extensively** - reference their core business, target market, key differentiators, and company culture throughout the analysis
+- **Make scenarios specific to ${companyName}'s actual business** - don't use generic examples
 - Include specific dollar amounts ($XXK-$XXXK ranges)
 - Include specific percentage metrics (X% reduction, X% improvement)
 - Maintain emotional depth and business rigor
 - Follow the section structures exactly as specified
-- Make it feel like custom analysis FOR THIS SPECIFIC COMPANY
+- Make it feel like custom analysis FOR THIS SPECIFIC COMPANY - the user should read this and think "They really understand our business"
 
 RETURN FORMAT:
 Return ONLY valid JSON in this exact structure (no markdown, no extra text):
@@ -1312,17 +1496,48 @@ Generate now for this deliverable.`;
  */
 function buildComprehensivePrompt({ jobTitle, industry, companyName, companyContext, deliverables }) {
   // Safely extract companyContext properties, ensuring they're strings and don't break template strings
+  const safeCoreBusiness = companyContext?.coreBusiness ? String(companyContext.coreBusiness).substring(0, 800) : (companyContext?.products ? String(companyContext.products).substring(0, 500) : 'Not specified');
+  const safeTargetMarket = companyContext?.targetMarket ? String(companyContext.targetMarket).substring(0, 400) : 'Not specified';
   const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
-  const safeProducts = companyContext?.products ? String(companyContext.products).substring(0, 200) : 'Not specified';
-  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 200) : industry;
-  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 200) : 'None found';
+  const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 400) : industry;
+  const safeKeyDifferentiators = companyContext?.keyDifferentiators ? String(companyContext.keyDifferentiators).substring(0, 400) : 'Not specified';
+  const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 400) : 'None found';
+  const safeCompanyCulture = companyContext?.companyCulture ? String(companyContext.companyCulture).substring(0, 400) : 'Not specified';
+  const safeRawContent = companyContext?.rawContent ? String(companyContext.rawContent).substring(0, 3000) : null;
   
   const contextSummary = companyContext ? `
-COMPANY RESEARCH FROM WEBSITE:
-- Company Size: ${safeCompanySize}
-- Products/Services: ${safeProducts}
-- Industry Details: ${safeIndustry}
-- Recent News: ${safeRecentNews}
+COMPANY RESEARCH FROM WEBSITE (USE THIS INFORMATION EXTENSIVELY THROUGHOUT YOUR RESPONSE):
+
+**Core Business/Products:**
+${safeCoreBusiness}
+
+**Target Market:**
+${safeTargetMarket}
+
+**Company Size:**
+${safeCompanySize}
+
+**Industry:**
+${safeIndustry}
+
+**Key Differentiators/Competitive Advantages:**
+${safeKeyDifferentiators}
+
+**Recent News/Updates:**
+${safeRecentNews}
+
+**Company Culture/Values:**
+${safeCompanyCulture}
+
+${safeRawContent ? `**Full Website Content (for additional context):**
+${safeRawContent.substring(0, 2000)}...` : ''}
+
+CRITICAL: You MUST reference specific details from the company research above throughout your response. Make the analysis feel custom-built for ${companyName} by:
+- Mentioning their specific products/services when relevant
+- Referencing their target market and customer base
+- Incorporating their key differentiators into scenarios
+- Using their industry context to make examples realistic
+- Referencing their company culture/values where appropriate
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}
@@ -1547,11 +1762,13 @@ Format as plain text with sections:
 CRITICAL REQUIREMENTS:
 - Use "${companyName}" 8-12 times per deliverable across all sections
 - Reference ${industry} context appropriately
+- **MANDATORY: Use the company research information extensively** - reference their core business, target market, key differentiators, and company culture throughout the analysis
+- **Make scenarios specific to ${companyName}'s actual business** - don't use generic examples
 - Include specific dollar amounts ($XXK-$XXXK ranges)
 - Include specific percentage metrics (X% reduction, X% improvement)
 - Maintain emotional depth and business rigor
 - Follow the section structures exactly as specified
-- Make it feel like custom analysis FOR THIS SPECIFIC COMPANY
+- Make it feel like custom analysis FOR THIS SPECIFIC COMPANY - the user should read this and think "They really understand our business"
 
 RETURN FORMAT:
 Return ONLY valid JSON in this exact structure (no markdown, no extra text):
