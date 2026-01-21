@@ -169,6 +169,19 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         // Only keep serializable string properties
         const sanitized = {};
         
+        // Helper function to sanitize array/string fields
+        const sanitizeArrayField = (value, maxLength = 1000) => {
+          if (Array.isArray(value)) {
+            // Convert array to comma-separated string, truncate if needed
+            const str = value.join(', ');
+            return str.substring(0, maxLength);
+          }
+          if (typeof value === 'string' && value.trim()) {
+            return value.substring(0, maxLength);
+          }
+          return null; // Will be skipped if null
+        };
+
         // Include all fields from AI extraction or fallback
         if (rawCompanyContext.rawContent !== undefined && rawCompanyContext.rawContent !== null) {
           sanitized.rawContent = String(rawCompanyContext.rawContent).substring(0, 5000); // Increased to 5000
@@ -176,14 +189,26 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         if (rawCompanyContext.coreBusiness !== undefined && rawCompanyContext.coreBusiness !== null) {
           sanitized.coreBusiness = String(rawCompanyContext.coreBusiness).substring(0, 1000);
         }
+        // New fields: products (array or string)
+        if (rawCompanyContext.products !== undefined && rawCompanyContext.products !== null) {
+          const sanitizedProducts = sanitizeArrayField(rawCompanyContext.products, 800);
+          if (sanitizedProducts) sanitized.products = sanitizedProducts;
+        }
+        // New fields: services (array or string)
+        if (rawCompanyContext.services !== undefined && rawCompanyContext.services !== null) {
+          const sanitizedServices = sanitizeArrayField(rawCompanyContext.services, 800);
+          if (sanitizedServices) sanitized.services = sanitizedServices;
+        }
         if (rawCompanyContext.targetMarket !== undefined && rawCompanyContext.targetMarket !== null) {
           sanitized.targetMarket = String(rawCompanyContext.targetMarket).substring(0, 500);
         }
+        // New fields: customerSegments (array or string)
+        if (rawCompanyContext.customerSegments !== undefined && rawCompanyContext.customerSegments !== null) {
+          const sanitizedSegments = sanitizeArrayField(rawCompanyContext.customerSegments, 500);
+          if (sanitizedSegments) sanitized.customerSegments = sanitizedSegments;
+        }
         if (rawCompanyContext.companySize !== undefined && rawCompanyContext.companySize !== null) {
           sanitized.companySize = String(rawCompanyContext.companySize);
-        }
-        if (rawCompanyContext.products !== undefined && rawCompanyContext.products !== null) {
-          sanitized.products = String(rawCompanyContext.products).substring(0, 500); // Legacy field
         }
         if (rawCompanyContext.industry !== undefined && rawCompanyContext.industry !== null) {
           sanitized.industry = String(rawCompanyContext.industry).substring(0, 500);
@@ -191,11 +216,48 @@ router.post('/generate-deliverable-content', optionalAuth, async (req, res, next
         if (rawCompanyContext.keyDifferentiators !== undefined && rawCompanyContext.keyDifferentiators !== null) {
           sanitized.keyDifferentiators = String(rawCompanyContext.keyDifferentiators).substring(0, 500);
         }
+        // New fields: keyProcesses (array or string)
+        if (rawCompanyContext.keyProcesses !== undefined && rawCompanyContext.keyProcesses !== null) {
+          const sanitizedProcesses = sanitizeArrayField(rawCompanyContext.keyProcesses, 800);
+          if (sanitizedProcesses) sanitized.keyProcesses = sanitizedProcesses;
+        }
+        // New fields: useCases (array or string)
+        if (rawCompanyContext.useCases !== undefined && rawCompanyContext.useCases !== null) {
+          const sanitizedUseCases = sanitizeArrayField(rawCompanyContext.useCases, 800);
+          if (sanitizedUseCases) sanitized.useCases = sanitizedUseCases;
+        }
+        // New fields: technologyStack (array or string)
+        if (rawCompanyContext.technologyStack !== undefined && rawCompanyContext.technologyStack !== null) {
+          const sanitizedTechStack = sanitizeArrayField(rawCompanyContext.technologyStack, 500);
+          if (sanitizedTechStack) sanitized.technologyStack = sanitizedTechStack;
+        }
+        // New fields: pricingModel (string)
+        if (rawCompanyContext.pricingModel !== undefined && rawCompanyContext.pricingModel !== null) {
+          sanitized.pricingModel = String(rawCompanyContext.pricingModel).substring(0, 200);
+        }
+        // New fields: geographicPresence (array or string)
+        if (rawCompanyContext.geographicPresence !== undefined && rawCompanyContext.geographicPresence !== null) {
+          const sanitizedGeo = sanitizeArrayField(rawCompanyContext.geographicPresence, 300);
+          if (sanitizedGeo) sanitized.geographicPresence = sanitizedGeo;
+        }
+        // New fields: partnerships (array or string)
+        if (rawCompanyContext.partnerships !== undefined && rawCompanyContext.partnerships !== null) {
+          const sanitizedPartners = sanitizeArrayField(rawCompanyContext.partnerships, 500);
+          if (sanitizedPartners) sanitized.partnerships = sanitizedPartners;
+        }
+        // New fields: operationalDetails (string)
+        if (rawCompanyContext.operationalDetails !== undefined && rawCompanyContext.operationalDetails !== null) {
+          sanitized.operationalDetails = String(rawCompanyContext.operationalDetails).substring(0, 500);
+        }
         if (rawCompanyContext.recentNews !== undefined && rawCompanyContext.recentNews !== null) {
           sanitized.recentNews = String(rawCompanyContext.recentNews).substring(0, 500);
         }
         if (rawCompanyContext.companyCulture !== undefined && rawCompanyContext.companyCulture !== null) {
           sanitized.companyCulture = String(rawCompanyContext.companyCulture).substring(0, 500);
+        }
+        // Legacy field: products (for backward compatibility)
+        if (rawCompanyContext.products !== undefined && rawCompanyContext.products !== null && !sanitized.products) {
+          sanitized.products = String(rawCompanyContext.products).substring(0, 500);
         }
         
         // If empty, set to null
@@ -1027,7 +1089,10 @@ const COMMON_PAGE_PATHS = [
   '/testimonials',
   '/case-studies',
   '/customers',
-  '/partners'
+  '/partners',
+  '/support',
+  '/help',
+  '/documentation'
 ];
 
 /**
@@ -1062,22 +1127,26 @@ AVAILABLE LINKS FOUND (${allLinks.length} total):
 ${linksPreview}
 ${allLinks.length > 50 ? `\n... and ${allLinks.length - 50} more links ...` : ''}
 
-Identify ALL important pages (up to 10-15) that would contain:
+Identify ALL important pages (up to 20-25) that would contain:
 1. Company information (About, About Us, Company, Team, Leadership)
 2. Products/Services details (Products, Services, Solutions, What We Do, Features)
 3. Company size/team info (Team, Careers, Jobs, Contact, Locations)
 4. Pricing/business model (Pricing, Plans, How It Works, Get Started)
 5. Recent news/updates (News, Blog, Press, Media, Updates, Resources)
 6. Customer information (Testimonials, Case Studies, Customers, Partners)
+7. Job postings (Careers, Jobs - reveals tech stack, processes, growth areas)
+8. Thought leadership (Blog, Resources - reveals strategic direction, pain points)
+9. Use cases (Case Studies - reveals implementations and customer problems)
+10. Support documentation (Support, Help, Documentation - reveals processes and common issues)
 
 Return ONLY valid JSON array of relative URLs (starting with /), like:
-["/about", "/products", "/services", "/pricing", "/team", "/careers", "/blog"]
+["/about", "/products", "/services", "/pricing", "/team", "/careers", "/blog", "/case-studies", "/testimonials", "/resources"]
 
-Prioritize pages that are likely to contain substantial company information. Return as many relevant pages as you can find (up to 15).`;
+Prioritize pages that are likely to contain substantial company information, especially: careers (job descriptions), blog (thought leadership), case studies (use cases), testimonials (customer pain points), and resources (processes). Return as many relevant pages as you can find (up to 25).`;
 
         const message = await anthropic.messages.create({
           model: ANTHROPIC_MODEL,
-          max_tokens: 1000, // Increased for more pages
+          max_tokens: 1500, // Increased for more pages (25 instead of 15)
           temperature: 0.3,
           messages: [{
             role: 'user',
@@ -1093,7 +1162,7 @@ Prioritize pages that are likely to contain substantial company information. Ret
         aiIdentifiedPages = aiIdentifiedPages
           .filter(page => typeof page === 'string' && page.startsWith('/'))
           .filter(page => allLinks.includes(page)) // Only include pages that actually exist
-          .slice(0, 15); // Increased limit to 15 pages
+          .slice(0, 25); // Increased limit to 25 pages
         
         console.log(`🤖 AI identified ${aiIdentifiedPages.length} pages:`, aiIdentifiedPages);
       } catch (aiError) {
@@ -1119,8 +1188,8 @@ Prioritize pages that are likely to contain substantial company information. Ret
       combinedPages.push(...additionalPages);
     }
 
-    // Limit to 15 pages max for performance
-    const finalPages = combinedPages.slice(0, 15);
+    // Limit to 30 pages max for performance
+    const finalPages = combinedPages.slice(0, 30);
     
     console.log(`✅ Final page list: ${finalPages.length} pages to fetch:`, finalPages);
     return finalPages;
@@ -1250,43 +1319,73 @@ router.post('/fetch-multi-page-context', optionalAuth, async (req, res) => {
       });
     }
 
-    const extractionPrompt = `You are analyzing a company website (multiple pages) to extract key information for a personalized ROI analysis.
+    const extractionPrompt = `You are analyzing a company website (multiple pages) to extract comprehensive information for a personalized ROI analysis.
 
 WEBSITE CONTENT FROM ${pagesToFetch.length} PAGES:
-${combinedContent.substring(0, 10000)} // Increased to 10000 for multi-page content
+${combinedContent.substring(0, 15000)} // Increased to 15000 for richer multi-page content
 
 Extract the following information about this company:
 
 1. **Core Business/Products**: What does this company actually do? What are their main products or services? Be specific and detailed.
 
-2. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
+2. **Products**: List specific products offered (as JSON array). Extract from products pages, features, or service descriptions.
 
-3. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
+3. **Services**: List specific services offered (as JSON array). Extract from services pages or descriptions.
 
-4. **Industry**: What industry or industries does this company operate in? Be specific.
+4. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
 
-5. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+5. **Customer Segments**: Specific customer segments they serve (as JSON array or comma-separated). Examples: "B2B Enterprise", "SMB", "Individual Consumers", "Healthcare Industry", etc.
 
-6. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+6. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
 
-7. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
+7. **Industry**: What industry or industries does this company operate in? Be specific.
+
+8. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+
+9. **Key Processes**: Operational processes mentioned (as JSON array or comma-separated). Examples: "Order fulfillment", "Customer onboarding", "Fleet management", "Reservation processing", etc. Extract from how-it-works pages, case studies, or service descriptions.
+
+10. **Use Cases**: Specific use cases from case studies or testimonials (as JSON array or comma-separated). Extract real implementations and customer problems solved.
+
+11. **Technology Stack**: Technologies/platforms mentioned (as JSON array or comma-separated). Only if tech company or if technologies are mentioned. Examples: "React", "AWS", "PostgreSQL", "Mobile App", etc. Often found in job postings or technical documentation.
+
+12. **Pricing Model**: Business model (e.g., "Subscription-based", "Usage-based", "One-time purchase", "Freemium", "Enterprise licensing"). Extract from pricing pages or descriptions.
+
+13. **Geographic Presence**: Regions/countries where they operate (as JSON array or comma-separated). Examples: "US", "Europe", "Global", "North America", etc.
+
+14. **Partnerships**: Strategic partners mentioned (as JSON array or comma-separated). Extract from partners pages or mentions.
+
+15. **Operational Details**: Industry-specific operational metrics (as string). Examples: "Fleet size: 500,000 vehicles", "Number of locations: 8,000+", "Team structure: 30,000 employees across 150 countries". Extract specific numbers and metrics relevant to their business model.
+
+16. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+
+17. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
 
 Return ONLY valid JSON in this exact structure:
 {
   "coreBusiness": "Detailed description of what the company does and their main products/services",
+  "products": ["Product 1", "Product 2"] or [],
+  "services": ["Service 1", "Service 2"] or [],
   "targetMarket": "Description of their customers and market",
+  "customerSegments": ["Segment 1", "Segment 2"] or "Segment 1, Segment 2" or "Not specified",
   "companySize": "Estimated or stated company size (e.g., '50-100 employees', 'Enterprise', 'Startup')",
   "industry": "Specific industry or industries",
   "keyDifferentiators": "What makes them unique or competitive advantages",
+  "keyProcesses": ["Process 1", "Process 2"] or "Process 1, Process 2" or "Not specified",
+  "useCases": ["Use case 1", "Use case 2"] or "Use case 1, Use case 2" or "Not specified",
+  "technologyStack": ["Tech 1", "Tech 2"] or "Tech 1, Tech 2" or "Not specified",
+  "pricingModel": "Business model (e.g., 'Subscription-based', 'Usage-based')" or "Not specified",
+  "geographicPresence": ["Region 1", "Region 2"] or "Region 1, Region 2" or "Not specified",
+  "partnerships": ["Partner 1", "Partner 2"] or "Partner 1, Partner 2" or "Not specified",
+  "operationalDetails": "Industry-specific operational metrics" or "Not specified",
   "recentNews": "Recent announcements or news, or 'None found'",
   "companyCulture": "Company values, mission, or culture, or 'Not specified'"
 }
 
-Be thorough and specific. Extract real, meaningful information that will help personalize content for this company.`;
+Be thorough and specific. Extract real, meaningful information that will help personalize content for this company. For arrays, return JSON arrays when possible, or comma-separated strings if arrays are not feasible.`;
 
     const message = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000, // Increased for more fields (15+ fields instead of 7)
       temperature: 0.3,
       messages: [{
         role: 'user',
@@ -1305,23 +1404,54 @@ Be thorough and specific. Extract real, meaningful information that will help pe
       console.error('Failed to parse extraction JSON:', parseError);
       extractedInfo = {
         coreBusiness: combinedContent.substring(0, 500),
+        products: [],
+        services: [],
         targetMarket: 'Not specified',
+        customerSegments: 'Not specified',
         companySize: null,
         industry: 'Not specified',
         keyDifferentiators: 'Not specified',
+        keyProcesses: 'Not specified',
+        useCases: 'Not specified',
+        technologyStack: 'Not specified',
+        pricingModel: 'Not specified',
+        geographicPresence: 'Not specified',
+        partnerships: 'Not specified',
+        operationalDetails: 'Not specified',
         recentNews: null,
         companyCulture: 'Not specified'
       };
     }
 
     // Include rawContent from all pages (truncated to reasonable size)
+    // Helper function to normalize arrays/strings
+    const normalizeField = (value) => {
+      if (Array.isArray(value)) {
+        return value.length > 0 ? value : 'Not specified';
+      }
+      if (typeof value === 'string' && value.trim()) {
+        return value;
+      }
+      return value || 'Not specified';
+    };
+
     const companyContext = {
-      rawContent: combinedContent.substring(0, 10000), // Increased for multi-page
+      rawContent: combinedContent.substring(0, 15000), // Increased to 15000 for richer context
       coreBusiness: extractedInfo.coreBusiness || 'Not specified',
+      products: normalizeField(extractedInfo.products),
+      services: normalizeField(extractedInfo.services),
       targetMarket: extractedInfo.targetMarket || 'Not specified',
+      customerSegments: normalizeField(extractedInfo.customerSegments),
       companySize: extractedInfo.companySize || null,
       industry: extractedInfo.industry || 'Not specified',
       keyDifferentiators: extractedInfo.keyDifferentiators || 'Not specified',
+      keyProcesses: normalizeField(extractedInfo.keyProcesses),
+      useCases: normalizeField(extractedInfo.useCases),
+      technologyStack: normalizeField(extractedInfo.technologyStack),
+      pricingModel: extractedInfo.pricingModel || 'Not specified',
+      geographicPresence: normalizeField(extractedInfo.geographicPresence),
+      partnerships: normalizeField(extractedInfo.partnerships),
+      operationalDetails: extractedInfo.operationalDetails || 'Not specified',
       recentNews: extractedInfo.recentNews || null,
       companyCulture: extractedInfo.companyCulture || 'Not specified',
       pagesFetched: pagesToFetch.length,
@@ -1380,44 +1510,74 @@ router.post('/extract-company-context', optionalAuth, async (req, res) => {
     console.log(`🔍 Extracting company context from website: ${websiteURL || 'unknown'}`);
     console.log(`📄 Raw markdown length: ${rawMarkdown.length} chars`);
 
-    // Use AI to extract structured company information
-    const extractionPrompt = `You are analyzing a company website to extract key information for a personalized ROI analysis.
+    // Use AI to extract structured company information (same enhanced prompt as multi-page)
+    const extractionPrompt = `You are analyzing a company website to extract comprehensive information for a personalized ROI analysis.
 
-WEBSITE CONTENT (first 5000 characters):
-${rawMarkdown.substring(0, 5000)}
+WEBSITE CONTENT (first 15000 characters):
+${rawMarkdown.substring(0, 15000)}
 
 Extract the following information about this company:
 
 1. **Core Business/Products**: What does this company actually do? What are their main products or services? Be specific and detailed.
 
-2. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
+2. **Products**: List specific products offered (as JSON array). Extract from products pages, features, or service descriptions.
 
-3. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
+3. **Services**: List specific services offered (as JSON array). Extract from services pages or descriptions.
 
-4. **Industry**: What industry or industries does this company operate in? Be specific.
+4. **Target Market**: Who are their customers? (B2B, B2C, specific industries, company sizes, etc.)
 
-5. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+5. **Customer Segments**: Specific customer segments they serve (as JSON array or comma-separated). Examples: "B2B Enterprise", "SMB", "Individual Consumers", "Healthcare Industry", etc.
 
-6. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+6. **Company Size**: If mentioned, how many employees? If not mentioned, estimate based on context (startup, small business, mid-size, enterprise).
 
-7. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
+7. **Industry**: What industry or industries does this company operate in? Be specific.
+
+8. **Key Differentiators**: What makes this company unique? What are their competitive advantages or unique value propositions?
+
+9. **Key Processes**: Operational processes mentioned (as JSON array or comma-separated). Examples: "Order fulfillment", "Customer onboarding", "Fleet management", "Reservation processing", etc. Extract from how-it-works pages, case studies, or service descriptions.
+
+10. **Use Cases**: Specific use cases from case studies or testimonials (as JSON array or comma-separated). Extract real implementations and customer problems solved.
+
+11. **Technology Stack**: Technologies/platforms mentioned (as JSON array or comma-separated). Only if tech company or if technologies are mentioned. Examples: "React", "AWS", "PostgreSQL", "Mobile App", etc. Often found in job postings or technical documentation.
+
+12. **Pricing Model**: Business model (e.g., "Subscription-based", "Usage-based", "One-time purchase", "Freemium", "Enterprise licensing"). Extract from pricing pages or descriptions.
+
+13. **Geographic Presence**: Regions/countries where they operate (as JSON array or comma-separated). Examples: "US", "Europe", "Global", "North America", etc.
+
+14. **Partnerships**: Strategic partners mentioned (as JSON array or comma-separated). Extract from partners pages or mentions.
+
+15. **Operational Details**: Industry-specific operational metrics (as string). Examples: "Fleet size: 500,000 vehicles", "Number of locations: 8,000+", "Team structure: 30,000 employees across 150 countries". Extract specific numbers and metrics relevant to their business model.
+
+16. **Recent News/Updates**: Any recent announcements, launches, acquisitions, or significant news?
+
+17. **Company Culture/Values**: If mentioned, what are their values, mission, or culture?
 
 Return ONLY valid JSON in this exact structure:
 {
   "coreBusiness": "Detailed description of what the company does and their main products/services",
+  "products": ["Product 1", "Product 2"] or [],
+  "services": ["Service 1", "Service 2"] or [],
   "targetMarket": "Description of their customers and market",
+  "customerSegments": ["Segment 1", "Segment 2"] or "Segment 1, Segment 2" or "Not specified",
   "companySize": "Estimated or stated company size (e.g., '50-100 employees', 'Enterprise', 'Startup')",
   "industry": "Specific industry or industries",
   "keyDifferentiators": "What makes them unique or competitive advantages",
+  "keyProcesses": ["Process 1", "Process 2"] or "Process 1, Process 2" or "Not specified",
+  "useCases": ["Use case 1", "Use case 2"] or "Use case 1, Use case 2" or "Not specified",
+  "technologyStack": ["Tech 1", "Tech 2"] or "Tech 1, Tech 2" or "Not specified",
+  "pricingModel": "Business model (e.g., 'Subscription-based', 'Usage-based')" or "Not specified",
+  "geographicPresence": ["Region 1", "Region 2"] or "Region 1, Region 2" or "Not specified",
+  "partnerships": ["Partner 1", "Partner 2"] or "Partner 1, Partner 2" or "Not specified",
+  "operationalDetails": "Industry-specific operational metrics" or "Not specified",
   "recentNews": "Recent announcements or news, or 'None found'",
   "companyCulture": "Company values, mission, or culture, or 'Not specified'"
 }
 
-Be thorough and specific. Extract real, meaningful information that will help personalize content for this company.`;
+Be thorough and specific. Extract real, meaningful information that will help personalize content for this company. For arrays, return JSON arrays when possible, or comma-separated strings if arrays are not feasible.`;
 
     const message = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
-      max_tokens: 2000,
+      max_tokens: 4000, // Increased for more fields (15+ fields instead of 7)
       temperature: 0.3, // Lower temperature for more factual extraction
       messages: [{
         role: 'user',
@@ -1437,23 +1597,54 @@ Be thorough and specific. Extract real, meaningful information that will help pe
       // Fallback to basic extraction
       extractedInfo = {
         coreBusiness: rawMarkdown.substring(0, 500),
+        products: [],
+        services: [],
         targetMarket: 'Not specified',
+        customerSegments: 'Not specified',
         companySize: null,
         industry: 'Not specified',
         keyDifferentiators: 'Not specified',
+        keyProcesses: 'Not specified',
+        useCases: 'Not specified',
+        technologyStack: 'Not specified',
+        pricingModel: 'Not specified',
+        geographicPresence: 'Not specified',
+        partnerships: 'Not specified',
+        operationalDetails: 'Not specified',
         recentNews: null,
         companyCulture: 'Not specified'
       };
     }
 
+    // Helper function to normalize arrays/strings
+    const normalizeField = (value) => {
+      if (Array.isArray(value)) {
+        return value.length > 0 ? value : 'Not specified';
+      }
+      if (typeof value === 'string' && value.trim()) {
+        return value;
+      }
+      return value || 'Not specified';
+    };
+
     // Also include rawContent for full context in prompts
     const companyContext = {
       rawContent: rawMarkdown.substring(0, 5000), // Increased to 5000 chars for better context
       coreBusiness: extractedInfo.coreBusiness || 'Not specified',
+      products: normalizeField(extractedInfo.products),
+      services: normalizeField(extractedInfo.services),
       targetMarket: extractedInfo.targetMarket || 'Not specified',
+      customerSegments: normalizeField(extractedInfo.customerSegments),
       companySize: extractedInfo.companySize || null,
       industry: extractedInfo.industry || 'Not specified',
       keyDifferentiators: extractedInfo.keyDifferentiators || 'Not specified',
+      keyProcesses: normalizeField(extractedInfo.keyProcesses),
+      useCases: normalizeField(extractedInfo.useCases),
+      technologyStack: normalizeField(extractedInfo.technologyStack),
+      pricingModel: extractedInfo.pricingModel || 'Not specified',
+      geographicPresence: normalizeField(extractedInfo.geographicPresence),
+      partnerships: normalizeField(extractedInfo.partnerships),
+      operationalDetails: extractedInfo.operationalDetails || 'Not specified',
       recentNews: extractedInfo.recentNews || null,
       companyCulture: extractedInfo.companyCulture || 'Not specified'
     };
@@ -1737,12 +1928,31 @@ async function generateSingleDeliverable({ deliverable, index, jobTitle, industr
  * Build prompt for a single deliverable
  */
 function buildSingleDeliverablePrompt({ deliverable, index, jobTitle, industry, companyName, companyContext }) {
+  // Helper function to safely extract and format array/string fields
+  const safeArrayField = (field, maxLength = 500) => {
+    if (!field || field === 'Not specified') return null;
+    if (Array.isArray(field)) {
+      return field.join(', ').substring(0, maxLength);
+    }
+    return String(field).substring(0, maxLength);
+  };
+
   // Safely extract companyContext properties, ensuring they're strings and don't break template strings
   const safeCoreBusiness = companyContext?.coreBusiness ? String(companyContext.coreBusiness).substring(0, 800) : (companyContext?.products ? String(companyContext.products).substring(0, 500) : 'Not specified');
+  const safeProducts = safeArrayField(companyContext?.products, 600);
+  const safeServices = safeArrayField(companyContext?.services, 600);
   const safeTargetMarket = companyContext?.targetMarket ? String(companyContext.targetMarket).substring(0, 400) : 'Not specified';
+  const safeCustomerSegments = safeArrayField(companyContext?.customerSegments, 400);
   const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
   const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 400) : industry;
   const safeKeyDifferentiators = companyContext?.keyDifferentiators ? String(companyContext.keyDifferentiators).substring(0, 400) : 'Not specified';
+  const safeKeyProcesses = safeArrayField(companyContext?.keyProcesses, 600);
+  const safeUseCases = safeArrayField(companyContext?.useCases, 600);
+  const safeTechnologyStack = safeArrayField(companyContext?.technologyStack, 400);
+  const safePricingModel = companyContext?.pricingModel ? String(companyContext.pricingModel).substring(0, 200) : null;
+  const safeGeographicPresence = safeArrayField(companyContext?.geographicPresence, 300);
+  const safePartnerships = safeArrayField(companyContext?.partnerships, 400);
+  const safeOperationalDetails = companyContext?.operationalDetails ? String(companyContext.operationalDetails).substring(0, 500) : null;
   const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 400) : 'None found';
   const safeCompanyCulture = companyContext?.companyCulture ? String(companyContext.companyCulture).substring(0, 400) : 'Not specified';
   const safeRawContent = companyContext?.rawContent ? String(companyContext.rawContent).substring(0, 3000) : null;
@@ -1752,9 +1962,12 @@ COMPANY RESEARCH FROM WEBSITE (USE THIS INFORMATION EXTENSIVELY THROUGHOUT YOUR 
 
 **Core Business/Products:**
 ${safeCoreBusiness}
+${safeProducts ? `\n**Specific Products:**\n${safeProducts}` : ''}
+${safeServices ? `\n**Specific Services:**\n${safeServices}` : ''}
 
 **Target Market:**
 ${safeTargetMarket}
+${safeCustomerSegments ? `\n**Customer Segments:**\n${safeCustomerSegments}` : ''}
 
 **Company Size:**
 ${safeCompanySize}
@@ -1764,6 +1977,14 @@ ${safeIndustry}
 
 **Key Differentiators/Competitive Advantages:**
 ${safeKeyDifferentiators}
+
+${safeKeyProcesses ? `**Key Operational Processes:**\n${safeKeyProcesses}\n` : ''}
+${safeUseCases ? `**Use Cases & Implementations:**\n${safeUseCases}\n` : ''}
+${safeTechnologyStack ? `**Technology Stack:**\n${safeTechnologyStack}\n` : ''}
+${safePricingModel ? `**Pricing Model:**\n${safePricingModel}\n` : ''}
+${safeGeographicPresence ? `**Geographic Presence:**\n${safeGeographicPresence}\n` : ''}
+${safePartnerships ? `**Strategic Partnerships:**\n${safePartnerships}\n` : ''}
+${safeOperationalDetails ? `**Operational Details:**\n${safeOperationalDetails}\n` : ''}
 
 **Recent News/Updates:**
 ${safeRecentNews}
@@ -1776,10 +1997,11 @@ ${safeRawContent.substring(0, 2000)}...` : ''}
 
 CRITICAL: You MUST reference specific details from the company research above throughout your response. Make the analysis feel custom-built for ${companyName} by:
 - Mentioning their specific products/services when relevant
-- Referencing their target market and customer base
-- Incorporating their key differentiators into scenarios
-- Using their industry context to make examples realistic
-- Referencing their company culture/values where appropriate
+- Referencing their target market, customer segments, and customer base
+- Incorporating their key differentiators, processes, and use cases into scenarios
+- Using their technology stack and operational details to make examples realistic
+- Referencing their pricing model, geographic presence, and partnerships where relevant
+- Using their industry context and company culture/values to make examples realistic
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}
@@ -1956,12 +2178,31 @@ Generate now for this deliverable.`;
  * Build comprehensive prompt for Claude to generate all deliverable content
  */
 function buildComprehensivePrompt({ jobTitle, industry, companyName, companyContext, deliverables }) {
+  // Helper function to safely extract and format array/string fields
+  const safeArrayField = (field, maxLength = 500) => {
+    if (!field || field === 'Not specified') return null;
+    if (Array.isArray(field)) {
+      return field.join(', ').substring(0, maxLength);
+    }
+    return String(field).substring(0, maxLength);
+  };
+
   // Safely extract companyContext properties, ensuring they're strings and don't break template strings
   const safeCoreBusiness = companyContext?.coreBusiness ? String(companyContext.coreBusiness).substring(0, 800) : (companyContext?.products ? String(companyContext.products).substring(0, 500) : 'Not specified');
+  const safeProducts = safeArrayField(companyContext?.products, 600);
+  const safeServices = safeArrayField(companyContext?.services, 600);
   const safeTargetMarket = companyContext?.targetMarket ? String(companyContext.targetMarket).substring(0, 400) : 'Not specified';
+  const safeCustomerSegments = safeArrayField(companyContext?.customerSegments, 400);
   const safeCompanySize = companyContext?.companySize ? String(companyContext.companySize).substring(0, 200) : 'Not specified';
   const safeIndustry = companyContext?.industry ? String(companyContext.industry).substring(0, 400) : industry;
   const safeKeyDifferentiators = companyContext?.keyDifferentiators ? String(companyContext.keyDifferentiators).substring(0, 400) : 'Not specified';
+  const safeKeyProcesses = safeArrayField(companyContext?.keyProcesses, 600);
+  const safeUseCases = safeArrayField(companyContext?.useCases, 600);
+  const safeTechnologyStack = safeArrayField(companyContext?.technologyStack, 400);
+  const safePricingModel = companyContext?.pricingModel ? String(companyContext.pricingModel).substring(0, 200) : null;
+  const safeGeographicPresence = safeArrayField(companyContext?.geographicPresence, 300);
+  const safePartnerships = safeArrayField(companyContext?.partnerships, 400);
+  const safeOperationalDetails = companyContext?.operationalDetails ? String(companyContext.operationalDetails).substring(0, 500) : null;
   const safeRecentNews = companyContext?.recentNews ? String(companyContext.recentNews).substring(0, 400) : 'None found';
   const safeCompanyCulture = companyContext?.companyCulture ? String(companyContext.companyCulture).substring(0, 400) : 'Not specified';
   const safeRawContent = companyContext?.rawContent ? String(companyContext.rawContent).substring(0, 3000) : null;
@@ -1971,9 +2212,12 @@ COMPANY RESEARCH FROM WEBSITE (USE THIS INFORMATION EXTENSIVELY THROUGHOUT YOUR 
 
 **Core Business/Products:**
 ${safeCoreBusiness}
+${safeProducts ? `\n**Specific Products:**\n${safeProducts}` : ''}
+${safeServices ? `\n**Specific Services:**\n${safeServices}` : ''}
 
 **Target Market:**
 ${safeTargetMarket}
+${safeCustomerSegments ? `\n**Customer Segments:**\n${safeCustomerSegments}` : ''}
 
 **Company Size:**
 ${safeCompanySize}
@@ -1983,6 +2227,14 @@ ${safeIndustry}
 
 **Key Differentiators/Competitive Advantages:**
 ${safeKeyDifferentiators}
+
+${safeKeyProcesses ? `**Key Operational Processes:**\n${safeKeyProcesses}\n` : ''}
+${safeUseCases ? `**Use Cases & Implementations:**\n${safeUseCases}\n` : ''}
+${safeTechnologyStack ? `**Technology Stack:**\n${safeTechnologyStack}\n` : ''}
+${safePricingModel ? `**Pricing Model:**\n${safePricingModel}\n` : ''}
+${safeGeographicPresence ? `**Geographic Presence:**\n${safeGeographicPresence}\n` : ''}
+${safePartnerships ? `**Strategic Partnerships:**\n${safePartnerships}\n` : ''}
+${safeOperationalDetails ? `**Operational Details:**\n${safeOperationalDetails}\n` : ''}
 
 **Recent News/Updates:**
 ${safeRecentNews}
@@ -1995,10 +2247,11 @@ ${safeRawContent.substring(0, 2000)}...` : ''}
 
 CRITICAL: You MUST reference specific details from the company research above throughout your response. Make the analysis feel custom-built for ${companyName} by:
 - Mentioning their specific products/services when relevant
-- Referencing their target market and customer base
-- Incorporating their key differentiators into scenarios
-- Using their industry context to make examples realistic
-- Referencing their company culture/values where appropriate
+- Referencing their target market, customer segments, and customer base
+- Incorporating their key differentiators, processes, and use cases into scenarios
+- Using their technology stack and operational details to make examples realistic
+- Referencing their pricing model, geographic presence, and partnerships where relevant
+- Using their industry context and company culture/values to make examples realistic
 ` : `
 COMPANY CONTEXT:
 - Company: ${companyName}
