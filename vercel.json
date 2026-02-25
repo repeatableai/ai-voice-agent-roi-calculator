@@ -9,10 +9,10 @@
       }
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/AIVA/$1"
+      "source": "/(.*)",
+      "destination": "/AIVA/$1"
     }
   ],
   "headers": [
