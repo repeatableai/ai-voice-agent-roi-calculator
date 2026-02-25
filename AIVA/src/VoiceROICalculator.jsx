@@ -1165,7 +1165,11 @@ export default function VoiceROICalculator() {
                   <p><strong>Team Size:</strong> ~{analysisResults.companyContext.companySize}</p>
                 )}
                 {analysisResults.companyContext.products && (
-                  <p><strong>Focus:</strong> {analysisResults.companyContext.products.substring(0, 150)}...</p>
+                  <p><strong>Focus:</strong> {
+                    Array.isArray(analysisResults.companyContext.products)
+                      ? analysisResults.companyContext.products.join(', ').substring(0, 150)
+                      : String(analysisResults.companyContext.products).substring(0, 150)
+                  }...</p>
                 )}
                 <p className="text-xs text-gray-500 mt-2">
                   This analysis incorporates insights from your website to make scenarios more realistic and contextually relevant to {analysisResults.companyName}.

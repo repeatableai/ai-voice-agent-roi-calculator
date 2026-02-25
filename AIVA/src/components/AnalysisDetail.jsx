@@ -267,7 +267,11 @@ export default function AnalysisDetail() {
                 <p><strong>Team Size:</strong> ~{companyContext.companySize}</p>
               )}
               {companyContext.products && (
-                <p><strong>Focus:</strong> {companyContext.products.substring(0, 150)}...</p>
+                <p><strong>Focus:</strong> {
+                  Array.isArray(companyContext.products)
+                    ? companyContext.products.join(', ').substring(0, 150)
+                    : String(companyContext.products).substring(0, 150)
+                }...</p>
               )}
               <p className="text-xs text-gray-500 mt-2">
                 This analysis incorporates insights from your website to make scenarios more realistic and contextually relevant to {analysis.company_name}.
