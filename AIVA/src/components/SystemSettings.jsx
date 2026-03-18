@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Database, Server, Shield, Bell, Mail, Key, Save, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import Breadcrumbs from './Breadcrumbs';
 
 export default function SystemSettings() {
   const [settings, setSettings] = useState({

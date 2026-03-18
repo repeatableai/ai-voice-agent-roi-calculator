@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Plus, Edit, Trash2, Users, FileText, DollarSign, Search, Filter } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Users, FileText, DollarSign, Search, Filter, Pause, Play, Ban, RotateCcw } from 'lucide-react';
 
 export default function CompaniesList() {
   const [companies, setCompanies] = useState([]);
@@ -9,6 +9,14 @@ export default function CompaniesList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
+  const [creating, setCreating] = useState(false);
+
+  // Form state for creating company
+  const [companyName, setCompanyName] = useState('');
+  const [companyDomain, setCompanyDomain] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminName, setAdminName] = useState('');
 
   useEffect(() => {
     fetchCompanies();
@@ -37,6 +45,59 @@ export default function CompaniesList() {
     }
   };
 
+  const handleCreateCompany = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/companies`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: companyName,
+          domain: companyDomain || null,
+          website: companyDomain ? `https://${companyDomain.replace(/^https?:\/\//, '')}` : null,
+          adminEmail: adminEmail || null,
+          adminPassword: adminPassword || null,
+          adminName: adminName || null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create company');
+      }
+
+      const data = await response.json();
+
+      let message = `Company "${data.company.name}" created successfully!`;
+      if (data.adminUser) {
+        message += `\n\nAdmin account created:\nEmail: ${data.adminUser.email}\nPassword: ${adminPassword}`;
+      }
+      alert(message);
+
+      // Reset form
+      setShowCreateModal(false);
+      setCompanyName('');
+      setCompanyDomain('');
+      setAdminEmail('');
+      setAdminPassword('');
+      setAdminName('');
+
+      // Refresh list
+      fetchCompanies();
+    } catch (err) {
+      console.error('Error creating company:', err);
+      alert('Failed to create company: ' + err.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
       return;
@@ -57,6 +118,47 @@ export default function CompaniesList() {
     } catch (err) {
       console.error('Error deleting company:', err);
       alert('Failed to delete company: ' + err.message);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus, companyName) => {
+    const statusLabels = {
+      active: 'reactivate',
+      paused: 'pause',
+      suspended: 'suspend'
+    };
+
+    if (!confirm(`Are you sure you want to ${statusLabels[newStatus]} "${companyName}"?`)) {
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/companies/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          subscriptionStatus: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update company status');
+      }
+
+      // Update local state
+      setCompanies(companies.map(c =>
+        c.id === id ? { ...c, subscription_status: newStatus } : c
+      ));
+
+      alert(`Company "${companyName}" has been ${newStatus === 'active' ? 'reactivated' : newStatus}.`);
+    } catch (err) {
+      console.error('Error updating company status:', err);
+      alert('Failed to update company: ' + err.message);
     }
   };
 
@@ -142,6 +244,9 @@ export default function CompaniesList() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Domain
                     </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Employees
+                    </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Tier
                     </th>
@@ -180,6 +285,12 @@ export default function CompaniesList() {
                       <td className="px-6 py-4">
                         <span className="text-sm text-gray-700">{company.domain || 'N/A'}</span>
                       </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm font-semibold text-gray-700">{company.employee_count || 0}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
                           company.subscription_tier === 'enterprise' ? 'bg-purple-100 text-purple-800' :
@@ -192,7 +303,8 @@ export default function CompaniesList() {
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded text-xs font-semibold ${
                           company.subscription_status === 'active' ? 'bg-green-100 text-green-800' :
-                          company.subscription_status === 'suspended' ? 'bg-yellow-100 text-yellow-800' :
+                          company.subscription_status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                          company.subscription_status === 'suspended' ? 'bg-orange-100 text-orange-800' :
                           'bg-red-100 text-red-800'
                         }`}>
                           {company.subscription_status || 'active'}
@@ -204,7 +316,7 @@ export default function CompaniesList() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1">
                           <Link
                             to={`/companies/${company.id}`}
                             className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -212,6 +324,37 @@ export default function CompaniesList() {
                           >
                             <Edit className="w-4 h-4" />
                           </Link>
+
+                          {/* Status Actions */}
+                          {company.subscription_status === 'active' && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(company.id, 'paused', company.name)}
+                                className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                                title="Pause Company"
+                              >
+                                <Pause className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(company.id, 'suspended', company.name)}
+                                className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Suspend Company"
+                              >
+                                <Ban className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
+                          {(company.subscription_status === 'paused' || company.subscription_status === 'suspended') && (
+                            <button
+                              onClick={() => handleStatusChange(company.id, 'active', company.name)}
+                              className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Reactivate Company"
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleDelete(company.id)}
                             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -229,20 +372,116 @@ export default function CompaniesList() {
           </div>
         )}
 
-        {/* Create Company Modal - Placeholder */}
+        {/* Create Company Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
+            <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Create Company</h3>
-              <p className="text-gray-600 mb-6">Company creation form - Coming soon</p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+              <form onSubmit={handleCreateCompany}>
+                {/* Company Details Section */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Company Details</h4>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Acme Corporation"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Company URL / Domain
+                    </label>
+                    <input
+                      type="text"
+                      value={companyDomain}
+                      onChange={(e) => setCompanyDomain(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="acme.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Admin Account Section */}
+                <div className="mb-6 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Admin Account</h4>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Admin Name
+                    </label>
+                    <input
+                      type="text"
+                      value={adminName}
+                      onChange={(e) => setAdminName(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="John Smith"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Admin Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="admin@acme.com"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Admin Password *
+                    </label>
+                    <input
+                      type="text"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Min 6 characters"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Share this password with the company admin</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setCompanyName('');
+                      setCompanyDomain('');
+                      setAdminEmail('');
+                      setAdminPassword('');
+                      setAdminName('');
+                    }}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  >
+                    {creating ? 'Creating...' : 'Create Company'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

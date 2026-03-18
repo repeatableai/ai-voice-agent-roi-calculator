@@ -528,4 +528,108 @@ router.post('/reset-password', [
   }
 });
 
+// ===================================
+// POST /api/auth/create-employee
+// Admin creates an employee with email/password
+// ===================================
+
+router.post('/create-employee', [
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 6 }),
+  body('name').optional().isLength({ min: 1 }),
+  body('role').optional().isIn(['user', 'admin'])
+], async (req, res, next) => {
+  try {
+    // Check if user is authenticated
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Get current user to check permissions
+    const currentUserResult = await db.query(
+      'SELECT id, role, company_id FROM users WHERE id = $1',
+      [req.session.userId]
+    );
+
+    if (currentUserResult.rows.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    const currentUser = currentUserResult.rows[0];
+
+    // Only admin or super_admin can create employees
+    if (currentUser.role !== 'admin' && currentUser.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only admins can create employees' });
+    }
+
+    // Admin must have a company
+    if (currentUser.role === 'admin' && !currentUser.company_id) {
+      return res.status(400).json({ error: 'Admin must belong to a company to create employees' });
+    }
+
+    const { email, password, name, role } = req.body;
+    const employeeName = name || email.split('@')[0];
+    const employeeRole = role || 'user';
+
+    // Admin can only create 'user' or 'admin' roles in their company
+    // Super admin can create any role
+    if (currentUser.role === 'admin' && employeeRole === 'super_admin') {
+      return res.status(403).json({ error: 'Cannot create super_admin users' });
+    }
+
+    // Check if user already exists
+    const existingUser = await db.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({ error: 'User with this email already exists' });
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Use admin's company for new employee
+    const companyId = currentUser.company_id;
+
+    // Create employee
+    const result = await db.query(
+      `INSERT INTO users (email, password_hash, name, role, company_id, invited_by, invited_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       RETURNING id, email, name, role, company_id, created_at`,
+      [email, passwordHash, employeeName, employeeRole, companyId, req.session.userId]
+    );
+
+    const newEmployee = result.rows[0];
+
+    logInfo('Employee created by admin:', {
+      createdBy: req.session.userId,
+      employeeId: newEmployee.id,
+      email: newEmployee.email
+    });
+
+    res.status(201).json({
+      message: 'Employee created successfully',
+      employee: {
+        id: newEmployee.id,
+        email: newEmployee.email,
+        name: newEmployee.name,
+        role: newEmployee.role,
+        companyId: newEmployee.company_id
+      }
+    });
+
+  } catch (error) {
+    logError('Create employee error:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

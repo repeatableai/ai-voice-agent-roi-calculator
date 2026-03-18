@@ -15,17 +15,21 @@ export default function CompanyDashboard() {
   const [error, setError] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [invitePassword, setInvitePassword] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
   const [inviting, setInviting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const isSuperAdminUser = isSuperAdmin();
+
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (isSuperAdminUser) {
       fetchAllCompanies();
     } else {
       fetchCompanyData();
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdminUser]);
 
   const fetchAllCompanies = async () => {
     setLoading(true);
@@ -133,14 +137,13 @@ export default function CompanyDashboard() {
     fetchAllCompanies();
   };
 
-  const handleInvite = async (e) => {
+  const handleCreateEmployee = async (e) => {
     e.preventDefault();
     setInviting(true);
-    
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const targetCompanyId = selectedCompany?.id || company?.id;
-      const response = await fetch(`${apiUrl}/api/invitations`, {
+      const response = await fetch(`${apiUrl}/api/auth/create-employee`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,24 +151,35 @@ export default function CompanyDashboard() {
         credentials: 'include',
         body: JSON.stringify({
           email: inviteEmail,
-          role: inviteRole,
-          companyId: targetCompanyId
+          password: invitePassword,
+          name: inviteName || inviteEmail.split('@')[0],
+          role: inviteRole
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send invitation');
+        throw new Error(errorData.error || 'Failed to create employee');
       }
 
       const data = await response.json();
-      alert(`Invitation sent! Share this link: ${data.invitation?.invitationUrl || 'Check email'}`);
+      alert(`Employee created successfully!\n\nEmail: ${data.employee.email}\nPassword: ${invitePassword}\n\nPlease share these credentials with the employee.`);
       setShowInviteModal(false);
       setInviteEmail('');
+      setInviteName('');
+      setInvitePassword('');
       setInviteRole('user');
+
+      // Refresh employees list
+      const targetCompanyId = selectedCompany?.id || company?.id;
+      if (targetCompanyId) {
+        fetchCompanyData(targetCompanyId);
+      } else {
+        fetchCompanyData();
+      }
     } catch (err) {
-      console.error('Error sending invitation:', err);
-      alert('Failed to send invitation: ' + err.message);
+      console.error('Error creating employee:', err);
+      alert('Failed to create employee: ' + err.message);
     } finally {
       setInviting(false);
     }
@@ -181,7 +195,7 @@ export default function CompanyDashboard() {
   };
 
   // Super Admin: Show all companies list
-  if (isSuperAdmin && !selectedCompany) {
+  if (isSuperAdminUser && !selectedCompany) {
     const filteredCompanies = companies.filter(c =>
       c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.domain?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -328,7 +342,7 @@ export default function CompanyDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              {isSuperAdmin && (
+              {isSuperAdminUser && (
                 <button
                   onClick={handleBackToList}
                   className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-2"
@@ -404,12 +418,12 @@ export default function CompanyDashboard() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Invite Employee
+              Add Employee
             </button>
           </div>
 
           {employees.length === 0 ? (
-            <p className="text-gray-600">No employees yet. Invite your first employee!</p>
+            <p className="text-gray-600">No employees yet. Add your first employee!</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -450,12 +464,24 @@ export default function CompanyDashboard() {
           )}
         </div>
 
-        {/* Invite Modal */}
+        {/* Create Employee Modal */}
         {showInviteModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Invite Employee</h3>
-              <form onSubmit={handleInvite}>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Create Employee</h3>
+              <form onSubmit={handleCreateEmployee}>
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="John Smith"
+                  />
+                </div>
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Email Address
@@ -468,6 +494,21 @@ export default function CompanyDashboard() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="employee@example.com"
                   />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="text"
+                    value={invitePassword}
+                    onChange={(e) => setInvitePassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Min 6 characters"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Share this password with the employee</p>
                 </div>
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -495,7 +536,7 @@ export default function CompanyDashboard() {
                     disabled={inviting}
                     className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
                   >
-                    {inviting ? 'Sending...' : 'Send Invitation'}
+                    {inviting ? 'Creating...' : 'Create Employee'}
                   </button>
                 </div>
               </form>

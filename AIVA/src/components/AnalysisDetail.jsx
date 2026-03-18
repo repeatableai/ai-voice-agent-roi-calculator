@@ -5,7 +5,6 @@ import {
   CheckCircle, AlertCircle, Zap, BarChart3, Brain,
   ChevronDown, ChevronUp
 } from 'lucide-react';
-import Breadcrumbs from './Breadcrumbs';
 import HaradaMatrix from './HaradaMatrix';
 import DeliverableModal from './DeliverableModal';
 
@@ -235,8 +234,6 @@ export default function AnalysisDetail() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
-        <Breadcrumbs />
-        
         {/* Header - matching initial report */}
         <div className="text-center mb-8">
           <Link

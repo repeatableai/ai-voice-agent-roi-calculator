@@ -48,6 +48,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function VoiceROICalculator() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState('input');
   const [formData, setFormData] = useState({
     jobTitle: '',

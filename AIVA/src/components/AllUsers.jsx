@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Search, Filter, Building2, Mail, Calendar, Shield, Edit, X, CheckCircle, AlertCircle } from 'lucide-react';
-import Breadcrumbs from './Breadcrumbs';
 
 export default function AllUsers() {
   const [users, setUsers] = useState([]);

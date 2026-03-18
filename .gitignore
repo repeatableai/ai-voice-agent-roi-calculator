@@ -73,3 +73,4 @@ Thumbs.db
 RENDER_ENV_VALUES.txt
 *.env
 .env*
+.vercel

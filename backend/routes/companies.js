@@ -3,6 +3,7 @@
 
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const { body, param, query, validationResult } = require('express-validator');
 const db = require('../db/database');
 const { requireAuth, requireAdmin, requireSuperAdmin } = require('../middleware/auth');
@@ -21,21 +22,28 @@ router.get('/', async (req, res, next) => {
     const role = req.session.role;
     const userCompanyId = req.session.companyId;
 
-    let queryText = 'SELECT * FROM companies WHERE subscription_status = $1';
-    const queryParams = ['active'];
+    // Base query with employee count
+    let queryText = `
+      SELECT c.*,
+        (SELECT COUNT(*) FROM users WHERE company_id = c.id) as employee_count
+      FROM companies c
+    `;
+    const queryParams = [];
 
     // Role-based filtering
     if (role === 'user' || role === 'admin') {
-      // Users and admins can only see their own company
+      // Users and admins can only see their own company (only active)
       if (!userCompanyId) {
         return res.json({ companies: [] });
       }
-      queryText += ' AND id = $2';
-      queryParams.push(userCompanyId);
+      queryText += ' WHERE c.subscription_status = $1 AND c.id = $2';
+      queryParams.push('active', userCompanyId);
+    } else {
+      // Super admin sees all companies (all statuses)
+      queryText += ' WHERE 1=1';
     }
-    // Super admin sees all companies
 
-    queryText += ' ORDER BY created_at DESC';
+    queryText += ' ORDER BY c.created_at DESC';
 
     const result = await db.query(queryText, queryParams);
 
@@ -57,9 +65,13 @@ router.post('/', requireSuperAdmin, [
   body('domain').optional().trim(),
   body('industry').optional().trim(),
   body('size').optional().trim(),
-  body('website').optional().trim().isURL(),
+  body('website').optional().trim(),
   body('subscriptionTier').optional().isIn(['free', 'pro', 'enterprise']),
-  body('maxUsers').optional().isInt({ min: 1 })
+  body('maxUsers').optional().isInt({ min: 1 }),
+  // Admin user fields (optional - if provided, creates admin user)
+  body('adminEmail').optional().isEmail().normalizeEmail(),
+  body('adminPassword').optional().isLength({ min: 6 }),
+  body('adminName').optional().trim()
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -74,7 +86,10 @@ router.post('/', requireSuperAdmin, [
       size,
       website,
       subscriptionTier = 'free',
-      maxUsers = 10
+      maxUsers = 10,
+      adminEmail,
+      adminPassword,
+      adminName
     } = req.body;
 
     const createdBy = req.session.userId;
@@ -91,10 +106,22 @@ router.post('/', requireSuperAdmin, [
       }
     }
 
+    // Check if admin email already exists
+    if (adminEmail) {
+      const existingUser = await db.query(
+        'SELECT id FROM users WHERE email = $1',
+        [adminEmail]
+      );
+
+      if (existingUser.rows.length > 0) {
+        return res.status(409).json({ error: 'User with this email already exists' });
+      }
+    }
+
     // Create company
     const result = await db.query(
       `INSERT INTO companies (
-        name, domain, industry, size, website, subscription_tier, 
+        name, domain, industry, size, website, subscription_tier,
         max_users, created_by
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -115,9 +142,39 @@ router.post('/', requireSuperAdmin, [
 
     logInfo('Company created:', { companyId: company.id, name, createdBy });
 
+    // Create admin user if email and password provided
+    let adminUser = null;
+    if (adminEmail && adminPassword) {
+      const saltRounds = 12;
+      const passwordHash = await bcrypt.hash(adminPassword, saltRounds);
+      const effectiveAdminName = adminName || adminEmail.split('@')[0];
+
+      const userResult = await db.query(
+        `INSERT INTO users (email, password_hash, name, role, company_id, invited_by, invited_at)
+         VALUES ($1, $2, $3, 'admin', $4, $5, NOW())
+         RETURNING id, email, name, role, company_id, created_at`,
+        [adminEmail, passwordHash, effectiveAdminName, company.id, createdBy]
+      );
+
+      adminUser = userResult.rows[0];
+      logInfo('Admin user created for company:', {
+        companyId: company.id,
+        adminEmail,
+        adminUserId: adminUser.id
+      });
+    }
+
     res.status(201).json({
-      message: 'Company created successfully',
-      company
+      message: adminUser
+        ? 'Company and admin user created successfully'
+        : 'Company created successfully',
+      company,
+      adminUser: adminUser ? {
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: adminUser.role
+      } : null
     });
 
   } catch (error) {
@@ -185,7 +242,7 @@ router.put('/:id', [
   body('size').optional().trim(),
   body('website').optional().trim().isURL(),
   body('subscriptionTier').optional().isIn(['free', 'pro', 'enterprise']),
-  body('subscriptionStatus').optional().isIn(['active', 'suspended', 'cancelled']),
+  body('subscriptionStatus').optional().isIn(['active', 'paused', 'suspended', 'cancelled']),
   body('maxUsers').optional().isInt({ min: 1 })
 ], async (req, res, next) => {
   try {

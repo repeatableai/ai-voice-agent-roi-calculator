@@ -13,6 +13,7 @@ import CompaniesList from './components/CompaniesList';
 import SuperAdminDashboard from './components/SuperAdminDashboard';
 import AllUsers from './components/AllUsers';
 import SystemSettings from './components/SystemSettings';
+import ProfilePage from './components/ProfilePage';
 import Unauthorized from './components/Unauthorized';
 
 // Layout component for authenticated routes
@@ -186,6 +187,18 @@ function App() {
               <ProtectedRoute requiredRole="super_admin">
                 <AuthenticatedLayout>
                   <AllUsers />
+                </AuthenticatedLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Profile Route - for all authenticated users */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <AuthenticatedLayout>
+                  <ProfilePage />
                 </AuthenticatedLayout>
               </ProtectedRoute>
             }

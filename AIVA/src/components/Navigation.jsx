@@ -39,8 +39,7 @@ export default function Navigation() {
     // Company Dashboard only for admin (not super_admin, they have "All Companies" instead)
     if (user.role === 'admin') {
       baseItems.push(
-        { path: '/company', label: 'Company Dashboard', icon: Building2 },
-        { path: '/company/employees', label: 'Employees', icon: Users }
+        { path: '/company', label: 'Company Dashboard', icon: Building2 }
       );
     }
 
@@ -130,6 +129,14 @@ export default function Navigation() {
                       </p>
                     </div>
                     <div className="py-1">
+                      <Link
+                        to="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        My Profile
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
